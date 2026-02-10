@@ -66,7 +66,7 @@ Azure Service Bus has a message size limit (256 KB in standard tier). This libra
 
 ### ✅ Property Validation
 - Configurable maximum allowed properties per message
-- Prevents exceeding Azure Service Bus limits (default: 64 properties)
+- Prevents exceeding Azure Service Bus limits (default: 9 user properties)
 - Clear error messages for validation failures
 
 ### ✅ IgnorePayloadNotFound Option
@@ -153,10 +153,10 @@ azure:
     cleanup-blob-on-delete: true
     blob-key-prefix: ""
     ignore-payload-not-found: false
-    use-legacy-reserved-attribute-name: false
+    use-legacy-reserved-attribute-name: true
     payload-support-enabled: true
-    blob-access-tier: "Hot"           # Hot, Cool, or Archive
-    max-allowed-properties: 64
+    blob-access-tier: "Hot"           # Optional: Hot, Cool, or Archive
+    max-allowed-properties: 9
     encryption:
       encryption-scope: ""            # Optional Azure encryption scope
       customer-provided-key: ""       # Optional customer-provided key (base64)
@@ -215,14 +215,11 @@ List<String> messages = Arrays.asList(
 );
 client.sendMessageBatch(messages);
 
-// Batch send with properties
-List<Map<String, Object>> messagesWithProps = new ArrayList<>();
-messages.forEach(msg -> {
-    Map<String, Object> props = new HashMap<>();
-    props.put("timestamp", System.currentTimeMillis());
-    messagesWithProps.add(props);
-});
-client.sendMessageBatch(messages, messagesWithProps);
+// Batch send with common properties (applied to all messages)
+Map<String, Object> commonProps = new HashMap<>();
+commonProps.put("timestamp", System.currentTimeMillis());
+commonProps.put("source", "batch-processor");
+client.sendMessageBatch(messages, commonProps);
 
 // Batch delete payloads
 List<ExtendedServiceBusMessage> receivedMessages = client.receiveMessages(10);
@@ -232,24 +229,33 @@ client.deletePayloadBatch(receivedMessages);
 ### 6. Renew Message Locks
 
 ```java
-// Receive message
-ExtendedServiceBusMessage message = client.receiveMessages(1).get(0);
+// Receive messages
+List<ExtendedServiceBusMessage> messages = client.receiveMessages(1);
 
-// Process for extended period
-try {
-    // Long-running operation...
-    Thread.sleep(30000);
+if (!messages.isEmpty()) {
+    ExtendedServiceBusMessage message = messages.get(0);
     
-    // Renew lock to prevent timeout
-    client.renewMessageLock(message);
-    
-    // Continue processing...
-    processMessage(message);
-    
-} finally {
-    // Clean up
-    if (message.isPayloadFromBlob()) {
-        client.deletePayload(message);
+    // Process for extended period
+    try {
+        // Long-running operation...
+        Thread.sleep(30000);
+        
+        // Renew lock to prevent timeout
+        // Note: Pass the underlying ServiceBusReceivedMessage
+        ServiceBusReceivedMessage rawMessage = receiverClient.receiveMessages(1)
+            .stream()
+            .findFirst()
+            .orElseThrow();
+        client.renewMessageLock(rawMessage);
+        
+        // Continue processing...
+        processMessage(message);
+        
+    } finally {
+        // Clean up
+        if (message.isPayloadFromBlob()) {
+            client.deletePayload(message);
+        }
     }
 }
 ```
@@ -333,10 +339,10 @@ client.processMessages(
 | `azure.extended-client.cleanup-blob-on-delete` | `true` | Auto-delete blob payload when message is deleted |
 | `azure.extended-client.blob-key-prefix` | `""` | Prefix for blob names (e.g., "messages/" or "prod/") |
 | `azure.extended-client.ignore-payload-not-found` | `false` | Gracefully handle missing blob payloads without errors |
-| `azure.extended-client.use-legacy-reserved-attribute-name` | `false` | Use AWS SQS Extended Client compatible attribute names |
+| `azure.extended-client.use-legacy-reserved-attribute-name` | `true` | Use AWS SQS Extended Client compatible attribute names |
 | `azure.extended-client.payload-support-enabled` | `true` | Enable/disable payload offloading feature |
-| `azure.extended-client.blob-access-tier` | `"Hot"` | Blob storage access tier: Hot, Cool, or Archive |
-| `azure.extended-client.max-allowed-properties` | `64` | Maximum number of properties allowed per message |
+| `azure.extended-client.blob-access-tier` | `null` | Blob storage access tier: Hot, Cool, or Archive (optional) |
+| `azure.extended-client.max-allowed-properties` | `9` | Maximum number of user-defined properties allowed per message |
 
 ### Encryption Configuration
 
