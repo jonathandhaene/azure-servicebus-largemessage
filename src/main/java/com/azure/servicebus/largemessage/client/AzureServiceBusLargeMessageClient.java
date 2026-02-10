@@ -22,7 +22,6 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 /**
- * Azure Service Bus Large Message Client - the core client that implements the large message client pattern.
  * Core client for handling large messages with Azure Service Bus.
  * 
  * Automatically offloads large message payloads to Azure Blob Storage when they exceed
