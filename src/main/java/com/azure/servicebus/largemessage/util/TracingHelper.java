@@ -1,4 +1,4 @@
-package com.azure.servicebus.extended.util;
+package com.azure.servicebus.largemessage.util;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,7 +31,7 @@ public class TracingHelper {
                 Object openTelemetry = globalOtelClass.getMethod("get").invoke(null);
                 tracer = openTelemetry.getClass()
                     .getMethod("getTracer", String.class)
-                    .invoke(openTelemetry, "azure-servicebus-extended-client");
+                    .invoke(openTelemetry, "azure-servicebus-large-message-client");
                 logger.debug("OpenTelemetry tracer initialized successfully");
             } catch (Exception e) {
                 logger.debug("OpenTelemetry classes found but tracer initialization failed: {}", e.getMessage());

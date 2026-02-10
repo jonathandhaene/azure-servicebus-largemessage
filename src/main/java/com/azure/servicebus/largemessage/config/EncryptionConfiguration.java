@@ -1,4 +1,4 @@
-package com.azure.servicebus.extended.config;
+package com.azure.servicebus.largemessage.config;
 
 /**
  * Configuration for server-side encryption of blob payloads.

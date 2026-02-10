@@ -1,16 +1,16 @@
-package com.azure.servicebus.extended.client;
+package com.azure.servicebus.largemessage.client;
 
 import com.azure.messaging.servicebus.*;
 import com.azure.messaging.servicebus.models.DeadLetterOptions;
 import com.azure.messaging.servicebus.models.SubQueue;
-import com.azure.servicebus.extended.config.ExtendedClientConfiguration;
-import com.azure.servicebus.extended.model.BlobPointer;
-import com.azure.servicebus.extended.model.ExtendedServiceBusMessage;
-import com.azure.servicebus.extended.store.BlobPayloadStore;
-import com.azure.servicebus.extended.util.ApplicationPropertyValidator;
-import com.azure.servicebus.extended.util.DuplicateDetectionHelper;
-import com.azure.servicebus.extended.util.RetryHandler;
-import com.azure.servicebus.extended.util.TracingHelper;
+import com.azure.servicebus.largemessage.config.LargeMessageClientConfiguration;
+import com.azure.servicebus.largemessage.model.BlobPointer;
+import com.azure.servicebus.largemessage.model.LargeServiceBusMessage;
+import com.azure.servicebus.largemessage.store.BlobPayloadStore;
+import com.azure.servicebus.largemessage.util.ApplicationPropertyValidator;
+import com.azure.servicebus.largemessage.util.DuplicateDetectionHelper;
+import com.azure.servicebus.largemessage.util.RetryHandler;
+import com.azure.servicebus.largemessage.util.TracingHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,35 +22,34 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 /**
- * Azure Service Bus Extended Client - the core client that implements the extended client pattern.
  * Core client for handling large messages with Azure Service Bus.
  * 
  * Automatically offloads large message payloads to Azure Blob Storage when they exceed
  * the configured threshold, and transparently resolves blob-stored payloads when receiving messages.
  */
-public class AzureServiceBusExtendedClient implements AutoCloseable {
-    private static final Logger logger = LoggerFactory.getLogger(AzureServiceBusExtendedClient.class);
+public class AzureServiceBusLargeMessageClient implements AutoCloseable {
+    private static final Logger logger = LoggerFactory.getLogger(AzureServiceBusLargeMessageClient.class);
 
     private final ServiceBusSenderClient senderClient;
     private final ServiceBusReceiverClient receiverClient;
     private final BlobPayloadStore payloadStore;
-    private final ExtendedClientConfiguration config;
+    private final LargeMessageClientConfiguration config;
     private final RetryHandler retryHandler;
     private ServiceBusProcessorClient processorClient;
 
     /**
-     * Creates a new extended client with connection string (production use).
+     * Creates a new large message client with connection string (production use).
      *
      * @param connectionString the Service Bus connection string
      * @param queueName        the queue name
      * @param payloadStore     the blob payload store
-     * @param config           the extended client configuration
+     * @param config           the large message client configuration
      */
-    public AzureServiceBusExtendedClient(
+    public AzureServiceBusLargeMessageClient(
             String connectionString,
             String queueName,
             BlobPayloadStore payloadStore,
-            ExtendedClientConfiguration config) {
+            LargeMessageClientConfiguration config) {
         this.payloadStore = payloadStore;
         this.config = config;
         this.retryHandler = new RetryHandler(
@@ -71,22 +70,22 @@ public class AzureServiceBusExtendedClient implements AutoCloseable {
                 .queueName(queueName)
                 .buildClient();
 
-        logger.info("AzureServiceBusExtendedClient initialized for queue: {}", queueName);
+        logger.info("AzureServiceBusLargeMessageClient initialized for queue: {}", queueName);
     }
 
     /**
-     * Creates a new extended client with pre-built clients (for testing).
+     * Creates a new large message client with pre-built clients (for testing).
      *
      * @param senderClient   the Service Bus sender client
      * @param receiverClient the Service Bus receiver client
      * @param payloadStore   the blob payload store
-     * @param config         the extended client configuration
+     * @param config         the large message client configuration
      */
-    public AzureServiceBusExtendedClient(
+    public AzureServiceBusLargeMessageClient(
             ServiceBusSenderClient senderClient,
             ServiceBusReceiverClient receiverClient,
             BlobPayloadStore payloadStore,
-            ExtendedClientConfiguration config) {
+            LargeMessageClientConfiguration config) {
         this.senderClient = senderClient;
         this.receiverClient = receiverClient;
         this.payloadStore = payloadStore;
@@ -97,11 +96,11 @@ public class AzureServiceBusExtendedClient implements AutoCloseable {
                 config.getRetryBackoffMultiplier(),
                 config.getRetryMaxBackoffMillis()
         );
-        logger.info("AzureServiceBusExtendedClient initialized with provided clients");
+        logger.info("AzureServiceBusLargeMessageClient initialized with provided clients");
     }
 
     /**
-     * Sends a message with the extended client pattern.
+     * Sends a message with the large message client pattern.
      *
      * @param messageBody the message body to send
      */
@@ -172,7 +171,7 @@ public class AzureServiceBusExtendedClient implements AutoCloseable {
                     
                     // Add metadata properties using configured attribute name
                     properties.put(config.getReservedAttributeName(), payloadSize);
-                    properties.put(ExtendedClientConfiguration.BLOB_POINTER_MARKER, "true");
+                    properties.put(LargeMessageClientConfiguration.BLOB_POINTER_MARKER, "true");
                     
                     logger.debug("Payload offloaded to blob: {}", pointer);
                 } else {
@@ -194,8 +193,8 @@ public class AzureServiceBusExtendedClient implements AutoCloseable {
                 }
 
                 // Add user-agent header
-                properties.put(ExtendedClientConfiguration.EXTENDED_CLIENT_USER_AGENT, 
-                              ExtendedClientConfiguration.USER_AGENT_VALUE);
+                properties.put(LargeMessageClientConfiguration.LARGE_MESSAGE_CLIENT_USER_AGENT, 
+                              LargeMessageClientConfiguration.USER_AGENT_VALUE);
 
                 // Inject trace context if tracing is enabled
                 if (config.isTracingEnabled()) {
@@ -299,7 +298,7 @@ public class AzureServiceBusExtendedClient implements AutoCloseable {
                         
                         // Add metadata properties
                         properties.put(config.getReservedAttributeName(), payloadSize);
-                        properties.put(ExtendedClientConfiguration.BLOB_POINTER_MARKER, "true");
+                        properties.put(LargeMessageClientConfiguration.BLOB_POINTER_MARKER, "true");
                     } else {
                         message = new ServiceBusMessage(messageBody);
                     }
@@ -311,8 +310,8 @@ public class AzureServiceBusExtendedClient implements AutoCloseable {
                     }
 
                     // Add user-agent header
-                    properties.put(ExtendedClientConfiguration.EXTENDED_CLIENT_USER_AGENT, 
-                                  ExtendedClientConfiguration.USER_AGENT_VALUE);
+                    properties.put(LargeMessageClientConfiguration.LARGE_MESSAGE_CLIENT_USER_AGENT, 
+                                  LargeMessageClientConfiguration.USER_AGENT_VALUE);
 
                     // Inject trace context if tracing is enabled
                     if (config.isTracingEnabled()) {
@@ -427,7 +426,7 @@ public class AzureServiceBusExtendedClient implements AutoCloseable {
                     
                     message = new ServiceBusMessage(pointer.toJson());
                     properties.put(config.getReservedAttributeName(), payloadSize);
-                    properties.put(ExtendedClientConfiguration.BLOB_POINTER_MARKER, "true");
+                    properties.put(LargeMessageClientConfiguration.BLOB_POINTER_MARKER, "true");
                 } else {
                     message = new ServiceBusMessage(messageBody);
                 }
@@ -439,8 +438,8 @@ public class AzureServiceBusExtendedClient implements AutoCloseable {
                 }
 
                 // Add user-agent header
-                properties.put(ExtendedClientConfiguration.EXTENDED_CLIENT_USER_AGENT, 
-                              ExtendedClientConfiguration.USER_AGENT_VALUE);
+                properties.put(LargeMessageClientConfiguration.LARGE_MESSAGE_CLIENT_USER_AGENT, 
+                              LargeMessageClientConfiguration.USER_AGENT_VALUE);
 
                 // Inject trace context if tracing is enabled
                 if (config.isTracingEnabled()) {
@@ -476,20 +475,20 @@ public class AzureServiceBusExtendedClient implements AutoCloseable {
      * Receives messages from the queue and resolves blob payloads.
      *
      * @param maxMessages maximum number of messages to receive
-     * @return list of extended Service Bus messages with resolved payloads
+     * @return list of large Service Bus messages with resolved payloads
      */
-    public List<ExtendedServiceBusMessage> receiveMessages(int maxMessages) {
+    public List<LargeServiceBusMessage> receiveMessages(int maxMessages) {
         try {
-            List<ExtendedServiceBusMessage> extendedMessages = new ArrayList<>();
+            List<LargeServiceBusMessage> largeMessages = new ArrayList<>();
             
             receiverClient.receiveMessages(maxMessages, Duration.ofSeconds(10))
                     .forEach(message -> {
-                        ExtendedServiceBusMessage extendedMessage = processReceivedMessage(message);
-                        extendedMessages.add(extendedMessage);
+                        LargeServiceBusMessage largeMessage = processReceivedMessage(message);
+                        largeMessages.add(largeMessage);
                     });
 
-            logger.debug("Received {} messages", extendedMessages.size());
-            return extendedMessages;
+            logger.debug("Received {} messages", largeMessages.size());
+            return largeMessages;
         } catch (Exception e) {
             logger.error("Failed to receive messages", e);
             throw new RuntimeException("Failed to receive messages", e);
@@ -505,7 +504,7 @@ public class AzureServiceBusExtendedClient implements AutoCloseable {
      */
     public void processMessages(
             String connectionString,
-            Consumer<ExtendedServiceBusMessage> messageHandler,
+            Consumer<LargeServiceBusMessage> messageHandler,
             Consumer<ServiceBusErrorContext> errorHandler) {
         
         // Note: This method creates a processor but doesn't store a queue name
@@ -525,7 +524,7 @@ public class AzureServiceBusExtendedClient implements AutoCloseable {
     public void processMessages(
             String connectionString,
             String queueName,
-            Consumer<ExtendedServiceBusMessage> messageHandler,
+            Consumer<LargeServiceBusMessage> messageHandler,
             Consumer<ServiceBusErrorContext> errorHandler) {
         
         if (processorClient != null) {
@@ -540,8 +539,8 @@ public class AzureServiceBusExtendedClient implements AutoCloseable {
                 .processMessage(context -> {
                     ServiceBusReceivedMessage message = context.getMessage();
                     try {
-                        ExtendedServiceBusMessage extendedMessage = processReceivedMessage(message);
-                        messageHandler.accept(extendedMessage);
+                        LargeServiceBusMessage largeMessage = processReceivedMessage(message);
+                        messageHandler.accept(largeMessage);
                         context.complete();
                     } catch (Exception e) {
                         logger.error("Error processing message: {}", message.getMessageId(), e);
@@ -573,9 +572,9 @@ public class AzureServiceBusExtendedClient implements AutoCloseable {
      * Processes a received Service Bus message and resolves blob payload if needed.
      *
      * @param message the received Service Bus message
-     * @return an ExtendedServiceBusMessage with resolved payload
+     * @return a LargeServiceBusMessage with resolved payload
      */
-    private ExtendedServiceBusMessage processReceivedMessage(ServiceBusReceivedMessage message) {
+    private LargeServiceBusMessage processReceivedMessage(ServiceBusReceivedMessage message) {
         Object span = null;
         try {
             // Start tracing span if enabled
@@ -592,7 +591,7 @@ public class AzureServiceBusExtendedClient implements AutoCloseable {
                 TracingHelper.extractTraceContext(appProperties);
             }
             
-            boolean isFromBlob = "true".equals(String.valueOf(appProperties.get(ExtendedClientConfiguration.BLOB_POINTER_MARKER)));
+            boolean isFromBlob = "true".equals(String.valueOf(appProperties.get(LargeMessageClientConfiguration.BLOB_POINTER_MARKER)));
             
             String body = message.getBody().toString();
             BlobPointer blobPointer = null;
@@ -614,19 +613,19 @@ public class AzureServiceBusExtendedClient implements AutoCloseable {
                 }
                 
                 // Remove internal marker properties
-                appProperties.remove(ExtendedClientConfiguration.BLOB_POINTER_MARKER);
+                appProperties.remove(LargeMessageClientConfiguration.BLOB_POINTER_MARKER);
                 
                 // Remove both legacy and modern reserved attribute names
-                appProperties.remove(ExtendedClientConfiguration.RESERVED_ATTRIBUTE_NAME);
-                appProperties.remove(ExtendedClientConfiguration.LEGACY_RESERVED_ATTRIBUTE_NAME);
+                appProperties.remove(LargeMessageClientConfiguration.RESERVED_ATTRIBUTE_NAME);
+                appProperties.remove(LargeMessageClientConfiguration.LEGACY_RESERVED_ATTRIBUTE_NAME);
                 
                 logger.debug("Payload resolved from blob: {}", blobPointer);
             }
             
             // Strip user-agent header
-            appProperties.remove(ExtendedClientConfiguration.EXTENDED_CLIENT_USER_AGENT);
+            appProperties.remove(LargeMessageClientConfiguration.LARGE_MESSAGE_CLIENT_USER_AGENT);
 
-            ExtendedServiceBusMessage extendedMessage = new ExtendedServiceBusMessage(
+            LargeServiceBusMessage largeMessage = new LargeServiceBusMessage(
                     message.getMessageId(),
                     body,
                     appProperties,
@@ -641,7 +640,7 @@ public class AzureServiceBusExtendedClient implements AutoCloseable {
                 TracingHelper.endSpan(span);
             }
 
-            return extendedMessage;
+            return largeMessage;
         } catch (Exception e) {
             if (span != null) {
                 TracingHelper.recordException(span, e);
@@ -654,9 +653,9 @@ public class AzureServiceBusExtendedClient implements AutoCloseable {
     /**
      * Deletes the blob payload associated with a message, if applicable.
      *
-     * @param message the extended Service Bus message
+     * @param message the large Service Bus message
      */
-    public void deletePayload(ExtendedServiceBusMessage message) {
+    public void deletePayload(LargeServiceBusMessage message) {
         if (!config.isCleanupBlobOnDelete()) {
             logger.debug("Blob cleanup is disabled. Skipping deletion.");
             return;
@@ -691,10 +690,10 @@ public class AzureServiceBusExtendedClient implements AutoCloseable {
     /**
      * Deletes blob payloads for multiple messages in batch with per-message error handling.
      *
-     * @param messages list of extended Service Bus messages
+     * @param messages list of large Service Bus messages
      * @return count of successfully deleted blobs
      */
-    public int deletePayloadBatch(List<ExtendedServiceBusMessage> messages) {
+    public int deletePayloadBatch(List<LargeServiceBusMessage> messages) {
         if (messages == null || messages.isEmpty()) {
             logger.debug("No messages provided for batch deletion");
             return 0;
@@ -713,7 +712,7 @@ public class AzureServiceBusExtendedClient implements AutoCloseable {
         int successCount = 0;
         int failureCount = 0;
 
-        for (ExtendedServiceBusMessage message : messages) {
+        for (LargeServiceBusMessage message : messages) {
             try {
                 if (message.isPayloadFromBlob() && message.getBlobPointer() != null) {
                     retryHandler.executeWithRetry(() -> {
@@ -805,9 +804,9 @@ public class AzureServiceBusExtendedClient implements AutoCloseable {
      * Receives a deferred message by sequence number.
      *
      * @param sequenceNumber the sequence number of the deferred message
-     * @return the extended Service Bus message with resolved payload
+     * @return the large Service Bus message with resolved payload
      */
-    public ExtendedServiceBusMessage receiveDeferredMessage(long sequenceNumber) {
+    public LargeServiceBusMessage receiveDeferredMessage(long sequenceNumber) {
         try {
             logger.debug("Receiving deferred message with sequence number: {}", sequenceNumber);
             ServiceBusReceivedMessage message = receiverClient.receiveDeferredMessage(sequenceNumber);
@@ -817,9 +816,9 @@ public class AzureServiceBusExtendedClient implements AutoCloseable {
                 return null;
             }
             
-            ExtendedServiceBusMessage extendedMessage = processReceivedMessage(message);
+            LargeServiceBusMessage largeMessage = processReceivedMessage(message);
             logger.debug("Deferred message received and processed");
-            return extendedMessage;
+            return largeMessage;
         } catch (Exception e) {
             logger.error("Failed to receive deferred message with sequence number: {}", sequenceNumber, e);
             throw new RuntimeException("Failed to receive deferred message", e);
@@ -830,9 +829,9 @@ public class AzureServiceBusExtendedClient implements AutoCloseable {
      * Receives multiple deferred messages by sequence numbers.
      *
      * @param sequenceNumbers list of sequence numbers of deferred messages
-     * @return list of extended Service Bus messages with resolved payloads
+     * @return list of large Service Bus messages with resolved payloads
      */
-    public List<ExtendedServiceBusMessage> receiveDeferredMessages(List<Long> sequenceNumbers) {
+    public List<LargeServiceBusMessage> receiveDeferredMessages(List<Long> sequenceNumbers) {
         if (sequenceNumbers == null || sequenceNumbers.isEmpty()) {
             logger.debug("No sequence numbers provided for deferred message retrieval");
             return new ArrayList<>();
@@ -841,14 +840,14 @@ public class AzureServiceBusExtendedClient implements AutoCloseable {
         try {
             logger.debug("Receiving {} deferred messages", sequenceNumbers.size());
             
-            List<ExtendedServiceBusMessage> extendedMessages = new ArrayList<>();
+            List<LargeServiceBusMessage> largeMessages = new ArrayList<>();
             
             for (Long sequenceNumber : sequenceNumbers) {
                 try {
                     ServiceBusReceivedMessage message = receiverClient.receiveDeferredMessage(sequenceNumber);
                     if (message != null) {
-                        ExtendedServiceBusMessage extendedMessage = processReceivedMessage(message);
-                        extendedMessages.add(extendedMessage);
+                        LargeServiceBusMessage largeMessage = processReceivedMessage(message);
+                        largeMessages.add(largeMessage);
                     } else {
                         logger.warn("No deferred message found with sequence number: {}", sequenceNumber);
                     }
@@ -858,8 +857,8 @@ public class AzureServiceBusExtendedClient implements AutoCloseable {
                 }
             }
             
-            logger.debug("Received and processed {} deferred messages", extendedMessages.size());
-            return extendedMessages;
+            logger.debug("Received and processed {} deferred messages", largeMessages.size());
+            return largeMessages;
         } catch (Exception e) {
             logger.error("Failed to receive deferred messages", e);
             throw new RuntimeException("Failed to receive deferred messages", e);
@@ -874,7 +873,7 @@ public class AzureServiceBusExtendedClient implements AutoCloseable {
      * @param maxMessages      maximum number of messages to receive
      * @return list of dead-lettered messages with resolved payloads
      */
-    public List<ExtendedServiceBusMessage> receiveDeadLetterMessages(
+    public List<LargeServiceBusMessage> receiveDeadLetterMessages(
             String connectionString,
             String queueName,
             int maxMessages) {
@@ -885,16 +884,16 @@ public class AzureServiceBusExtendedClient implements AutoCloseable {
                 .subQueue(SubQueue.DEAD_LETTER_QUEUE)
                 .buildClient()) {
 
-            List<ExtendedServiceBusMessage> extendedMessages = new ArrayList<>();
+            List<LargeServiceBusMessage> largeMessages = new ArrayList<>();
             
             dlqReceiverClient.receiveMessages(maxMessages, Duration.ofSeconds(10))
                     .forEach(message -> {
-                        ExtendedServiceBusMessage extendedMessage = processReceivedMessage(message);
-                        extendedMessages.add(extendedMessage);
+                        LargeServiceBusMessage largeMessage = processReceivedMessage(message);
+                        largeMessages.add(largeMessage);
                     });
 
-            logger.debug("Received {} messages from dead-letter queue", extendedMessages.size());
-            return extendedMessages;
+            logger.debug("Received {} messages from dead-letter queue", largeMessages.size());
+            return largeMessages;
         } catch (Exception e) {
             logger.error("Failed to receive dead-letter messages", e);
             throw new RuntimeException("Failed to receive dead-letter messages", e);
@@ -915,7 +914,7 @@ public class AzureServiceBusExtendedClient implements AutoCloseable {
     public ServiceBusProcessorClient processDeadLetterMessages(
             String connectionString,
             String queueName,
-            Consumer<ExtendedServiceBusMessage> messageHandler,
+            Consumer<LargeServiceBusMessage> messageHandler,
             Consumer<ServiceBusErrorContext> errorHandler) {
         
         ServiceBusProcessorClient dlqProcessorClient = new ServiceBusClientBuilder()
@@ -926,8 +925,8 @@ public class AzureServiceBusExtendedClient implements AutoCloseable {
                 .processMessage(context -> {
                     ServiceBusReceivedMessage message = context.getMessage();
                     try {
-                        ExtendedServiceBusMessage extendedMessage = processReceivedMessage(message);
-                        messageHandler.accept(extendedMessage);
+                        LargeServiceBusMessage largeMessage = processReceivedMessage(message);
+                        messageHandler.accept(largeMessage);
                         context.complete();
                     } catch (Exception e) {
                         logger.error("Error processing dead-letter message: {}", message.getMessageId(), e);

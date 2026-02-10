@@ -1,14 +1,14 @@
-package com.azure.servicebus.extended.client;
+package com.azure.servicebus.largemessage.client;
 
 import com.azure.core.util.BinaryData;
 import com.azure.messaging.servicebus.ServiceBusMessage;
 import com.azure.messaging.servicebus.ServiceBusReceivedMessage;
 import com.azure.messaging.servicebus.ServiceBusReceiverClient;
 import com.azure.messaging.servicebus.ServiceBusSenderClient;
-import com.azure.servicebus.extended.config.ExtendedClientConfiguration;
-import com.azure.servicebus.extended.model.BlobPointer;
-import com.azure.servicebus.extended.model.ExtendedServiceBusMessage;
-import com.azure.servicebus.extended.store.BlobPayloadStore;
+import com.azure.servicebus.largemessage.config.LargeMessageClientConfiguration;
+import com.azure.servicebus.largemessage.model.BlobPointer;
+import com.azure.servicebus.largemessage.model.LargeServiceBusMessage;
+import com.azure.servicebus.largemessage.store.BlobPayloadStore;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -21,15 +21,15 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 /**
- * Unit tests for AzureServiceBusExtendedClient.
+ * Unit tests for AzureServiceBusLargeMessageClient.
  */
-class AzureServiceBusExtendedClientTest {
+class AzureServiceBusLargeMessageClientTest {
 
     private ServiceBusSenderClient mockSenderClient;
     private ServiceBusReceiverClient mockReceiverClient;
     private BlobPayloadStore mockPayloadStore;
-    private ExtendedClientConfiguration config;
-    private AzureServiceBusExtendedClient client;
+    private LargeMessageClientConfiguration config;
+    private AzureServiceBusLargeMessageClient client;
 
     @BeforeEach
     void setUp() {
@@ -37,14 +37,14 @@ class AzureServiceBusExtendedClientTest {
         mockReceiverClient = mock(ServiceBusReceiverClient.class);
         mockPayloadStore = mock(BlobPayloadStore.class);
         
-        config = new ExtendedClientConfiguration();
+        config = new LargeMessageClientConfiguration();
         config.setMessageSizeThreshold(1024); // 1 KB for testing
         config.setAlwaysThroughBlob(false);
         config.setCleanupBlobOnDelete(true);
         config.setBlobKeyPrefix("");
         config.setUseLegacyReservedAttributeName(false); // Use modern name for tests
 
-        client = new AzureServiceBusExtendedClient(
+        client = new AzureServiceBusLargeMessageClient(
                 mockSenderClient,
                 mockReceiverClient,
                 mockPayloadStore,
@@ -67,7 +67,7 @@ class AzureServiceBusExtendedClientTest {
         
         assertEquals(smallMessage, capturedMessage.getBody().toString());
         assertFalse(capturedMessage.getApplicationProperties().containsKey(
-                ExtendedClientConfiguration.BLOB_POINTER_MARKER));
+                LargeMessageClientConfiguration.BLOB_POINTER_MARKER));
         
         // Verify no blob interaction
         verify(mockPayloadStore, never()).storePayload(anyString(), anyString());
@@ -100,9 +100,9 @@ class AzureServiceBusExtendedClientTest {
         
         // Verify application properties
         assertEquals("true", capturedMessage.getApplicationProperties().get(
-                ExtendedClientConfiguration.BLOB_POINTER_MARKER));
+                LargeMessageClientConfiguration.BLOB_POINTER_MARKER));
         assertTrue(capturedMessage.getApplicationProperties().containsKey(
-                ExtendedClientConfiguration.RESERVED_ATTRIBUTE_NAME));
+                LargeMessageClientConfiguration.RESERVED_ATTRIBUTE_NAME));
     }
 
     @Test
@@ -126,14 +126,14 @@ class AzureServiceBusExtendedClientTest {
         
         ServiceBusMessage capturedMessage = messageCaptor.getValue();
         assertEquals("true", capturedMessage.getApplicationProperties().get(
-                ExtendedClientConfiguration.BLOB_POINTER_MARKER));
+                LargeMessageClientConfiguration.BLOB_POINTER_MARKER));
     }
 
     @Test
     void testDeletePayload_cleansUpBlob() {
         // Arrange
         BlobPointer pointer = new BlobPointer("test-container", "test-blob");
-        ExtendedServiceBusMessage message = new ExtendedServiceBusMessage(
+        LargeServiceBusMessage message = new LargeServiceBusMessage(
                 "msg-id",
                 "body",
                 new HashMap<>(),
@@ -151,7 +151,7 @@ class AzureServiceBusExtendedClientTest {
     @Test
     void testDeletePayload_skipsWhenNotFromBlob() {
         // Arrange
-        ExtendedServiceBusMessage message = new ExtendedServiceBusMessage(
+        LargeServiceBusMessage message = new LargeServiceBusMessage(
                 "msg-id",
                 "body",
                 new HashMap<>(),
@@ -171,7 +171,7 @@ class AzureServiceBusExtendedClientTest {
         // Arrange
         config.setCleanupBlobOnDelete(false);
         BlobPointer pointer = new BlobPointer("test-container", "test-blob");
-        ExtendedServiceBusMessage message = new ExtendedServiceBusMessage(
+        LargeServiceBusMessage message = new LargeServiceBusMessage(
                 "msg-id",
                 "body",
                 new HashMap<>(),
@@ -322,7 +322,7 @@ class AzureServiceBusExtendedClientTest {
     void testDeletePayload_retriesOnTransientFailure() {
         // Arrange
         BlobPointer pointer = new BlobPointer("test-container", "test-blob");
-        ExtendedServiceBusMessage message = new ExtendedServiceBusMessage(
+        LargeServiceBusMessage message = new LargeServiceBusMessage(
                 "msg-id",
                 "body",
                 new HashMap<>(),
@@ -354,9 +354,9 @@ class AzureServiceBusExtendedClientTest {
     }
 
     @Test
-    void testExtendedServiceBusMessage_includesDLQFields() {
+    void testLargeServiceBusMessage_includesDLQFields() {
         // Arrange & Act
-        ExtendedServiceBusMessage message = new ExtendedServiceBusMessage(
+        LargeServiceBusMessage message = new LargeServiceBusMessage(
                 "msg-id",
                 "body",
                 new HashMap<>(),
@@ -374,9 +374,9 @@ class AzureServiceBusExtendedClientTest {
     }
 
     @Test
-    void testExtendedServiceBusMessage_backwardCompatibleConstructor() {
+    void testLargeServiceBusMessage_backwardCompatibleConstructor() {
         // Arrange & Act
-        ExtendedServiceBusMessage message = new ExtendedServiceBusMessage(
+        LargeServiceBusMessage message = new LargeServiceBusMessage(
                 "msg-id",
                 "body",
                 new HashMap<>(),

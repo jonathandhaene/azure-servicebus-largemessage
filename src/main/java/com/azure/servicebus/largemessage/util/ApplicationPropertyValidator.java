@@ -1,6 +1,6 @@
-package com.azure.servicebus.extended.util;
+package com.azure.servicebus.largemessage.util;
 
-import com.azure.servicebus.extended.config.ExtendedClientConfiguration;
+import com.azure.servicebus.largemessage.config.LargeMessageClientConfiguration;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -14,10 +14,10 @@ import java.util.Set;
 public class ApplicationPropertyValidator {
     
     private static final Set<String> RESERVED_PROPERTY_NAMES = new HashSet<>(Arrays.asList(
-        ExtendedClientConfiguration.RESERVED_ATTRIBUTE_NAME,
-        ExtendedClientConfiguration.LEGACY_RESERVED_ATTRIBUTE_NAME,
-        ExtendedClientConfiguration.BLOB_POINTER_MARKER,
-        ExtendedClientConfiguration.EXTENDED_CLIENT_USER_AGENT
+        LargeMessageClientConfiguration.RESERVED_ATTRIBUTE_NAME,
+        LargeMessageClientConfiguration.LEGACY_RESERVED_ATTRIBUTE_NAME,
+        LargeMessageClientConfiguration.BLOB_POINTER_MARKER,
+        LargeMessageClientConfiguration.LARGE_MESSAGE_CLIENT_USER_AGENT
     ));
 
     /**

@@ -1,4 +1,4 @@
-package com.azure.servicebus.extended.model;
+package com.azure.servicebus.largemessage.model;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;

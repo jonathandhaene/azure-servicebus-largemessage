@@ -1,7 +1,7 @@
-package com.azure.servicebus.extended.config;
+package com.azure.servicebus.largemessage.config;
 
-import com.azure.servicebus.extended.client.AzureServiceBusExtendedClient;
-import com.azure.servicebus.extended.store.BlobPayloadStore;
+import com.azure.servicebus.largemessage.client.AzureServiceBusLargeMessageClient;
+import com.azure.servicebus.largemessage.store.BlobPayloadStore;
 import com.azure.storage.blob.BlobServiceClient;
 import com.azure.storage.blob.BlobServiceClientBuilder;
 import org.springframework.beans.factory.annotation.Value;
@@ -11,12 +11,12 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * Spring Boot auto-configuration for Azure Service Bus Extended Client.
+ * Spring Boot auto-configuration for Azure Service Bus Large Message Client.
  * Automatically creates and configures beans when appropriate properties are set.
  */
 @Configuration
-@EnableConfigurationProperties(ExtendedClientConfiguration.class)
-public class AzureExtendedClientAutoConfiguration {
+@EnableConfigurationProperties(LargeMessageClientConfiguration.class)
+public class AzureLargeMessageClientAutoConfiguration {
 
     @Value("${azure.storage.connection-string:}")
     private String storageConnectionString;
@@ -62,17 +62,17 @@ public class AzureExtendedClientAutoConfiguration {
     }
 
     /**
-     * Creates an AzureServiceBusExtendedClient bean.
+     * Creates an AzureServiceBusLargeMessageClient bean.
      *
      * @param payloadStore the blob payload store
-     * @param config       the extended client configuration
-     * @return the AzureServiceBusExtendedClient instance
+     * @param config       the large message client configuration
+     * @return the AzureServiceBusLargeMessageClient instance
      */
     @Bean
     @ConditionalOnMissingBean
-    public AzureServiceBusExtendedClient azureServiceBusExtendedClient(
+    public AzureServiceBusLargeMessageClient azureServiceBusLargeMessageClient(
             BlobPayloadStore payloadStore,
-            ExtendedClientConfiguration config) {
+            LargeMessageClientConfiguration config) {
         
         if (serviceBusConnectionString == null || serviceBusConnectionString.isEmpty()) {
             throw new IllegalStateException(
@@ -81,7 +81,7 @@ public class AzureExtendedClientAutoConfiguration {
             );
         }
 
-        return new AzureServiceBusExtendedClient(
+        return new AzureServiceBusLargeMessageClient(
                 serviceBusConnectionString,
                 queueName,
                 payloadStore,

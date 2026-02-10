@@ -5,7 +5,7 @@ azure:
   storage:
     connection-string: ${AZURE_STORAGE_CONNECTION_STRING}
     container-name: ${AZURE_STORAGE_CONTAINER_NAME:large-messages}
-  extended-client:
+  large-message-client:
     # Message size and blob settings
     message-size-threshold: 262144    # 256 KB
     always-through-blob: false
