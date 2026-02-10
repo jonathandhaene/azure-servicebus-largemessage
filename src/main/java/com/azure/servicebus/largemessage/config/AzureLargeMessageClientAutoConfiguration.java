@@ -37,21 +37,34 @@ public class AzureLargeMessageClientAutoConfiguration {
     /**
      * Creates a BlobServiceClient bean.
      * Only created when not in receive-only mode.
+     * Uses custom StorageConnectionStringProvider if available, otherwise falls back to property.
      *
      * @return the BlobServiceClient instance
      */
     @Bean
     @ConditionalOnMissingBean
     @ConditionalOnProperty(name = "azure.servicebus.large-message-client.receive-only-mode", havingValue = "false", matchIfMissing = true)
-    public BlobServiceClient blobServiceClient() {
-        if (storageConnectionString == null || storageConnectionString.isEmpty()) {
+    public BlobServiceClient blobServiceClient(
+            @Autowired(required = false) StorageConnectionStringProvider connectionStringProvider) {
+        
+        // Get connection string from provider if available, otherwise use property
+        String connectionString;
+        if (connectionStringProvider != null) {
+            connectionString = connectionStringProvider.getConnectionString();
+        } else {
+            connectionString = storageConnectionString;
+        }
+        
+        if (connectionString == null || connectionString.isEmpty()) {
             throw new IllegalStateException(
                 "Azure Storage connection string is required. " +
-                "Please set azure.storage.connection-string property or AZURE_STORAGE_CONNECTION_STRING environment variable."
+                "Please set azure.storage.connection-string property, " +
+                "AZURE_STORAGE_CONNECTION_STRING environment variable, " +
+                "or provide a StorageConnectionStringProvider bean."
             );
         }
         return new BlobServiceClientBuilder()
-                .connectionString(storageConnectionString)
+                .connectionString(connectionString)
                 .buildClient();
     }
 
