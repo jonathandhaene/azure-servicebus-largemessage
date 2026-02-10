@@ -233,18 +233,141 @@ client.processMessages(
 );
 ```
 
+## Advanced Features
+
+### 11. SAS URI Support
+
+Generate Shared Access Signature (SAS) URIs for secure blob access without requiring storage account credentials on the receiver side.
+
+**Configuration:**
+```yaml
+azure:
+  servicebus:
+    large-message-client:
+      sas-enabled: true  # Enable SAS URI generation
+      sas-token-validation-time: P7D  # ISO-8601 duration (7 days)
+      message-property-for-blob-sas-uri: "$attachment.sas.uri"
+```
+
+**Usage:**
+When SAS is enabled, each uploaded blob automatically gets a SAS URI added as a message property. Receivers can download the blob using only this URI.
+
+### 12. Receive-Only Mode
+
+Configure a client to receive messages using only SAS URIs, without needing storage account credentials.
+
+**Configuration:**
+```yaml
+azure:
+  servicebus:
+    large-message-client:
+      receive-only-mode: true  # No storage credentials needed
+```
+
+**Usage:**
+```java
+// This client can receive and download blob payloads using SAS URIs only
+// No azure.storage.connection-string required
+@Autowired
+private AzureServiceBusLargeMessageClient client;
+
+List<LargeServiceBusMessage> messages = client.receiveMessages(10);
+// Blobs are downloaded using SAS URIs from message properties
+```
+
+### 13. Custom Blob Naming Strategy
+
+Implement custom blob naming logic (e.g., `{tenantId}/{messageId}` or date-based naming).
+
+**Create a custom resolver:**
+```java
+@Component
+public class CustomBlobNameResolver implements BlobNameResolver {
+    @Override
+    public String resolve(ServiceBusMessage message) {
+        String tenantId = (String) message.getApplicationProperties().get("tenantId");
+        String messageId = message.getMessageId();
+        return String.format("%s/%s", tenantId, messageId);
+    }
+}
+```
+
+**Spring Boot auto-configuration will automatically use your custom bean.**
+
+### 14. Custom Body Replacement
+
+Control what the message body becomes after blob offloading (default is BlobPointer JSON).
+
+**Example - Set body to null (like .NET):**
+```java
+@Component
+public class NullBodyReplacer implements MessageBodyReplacer {
+    @Override
+    public String replace(String originalBody, BlobPointer pointer) {
+        return "";  // or null, or custom metadata
+    }
+}
+```
+
+### 15. Dynamic Connection Strings (Key Vault Integration)
+
+Integrate with Azure Key Vault or other dynamic credential sources.
+
+**Example - Key Vault provider:**
+```java
+@Component
+public class KeyVaultConnectionStringProvider implements StorageConnectionStringProvider {
+    @Autowired
+    private SecretClient keyVaultClient;
+    
+    @Override
+    public String getConnectionString() {
+        return keyVaultClient.getSecret("storage-connection-string").getValue();
+    }
+}
+```
+
+**Spring Boot auto-configuration will use your provider instead of static properties.**
+
+### 16. Custom Message Size Criteria
+
+Implement custom logic to determine when messages should be offloaded (beyond simple size thresholds).
+
+**Example - Offload based on message type:**
+```java
+@Component
+public class CustomMessageSizeCriteria implements MessageSizeCriteria {
+    @Override
+    public boolean shouldOffload(String messageBody, Map<String, Object> properties) {
+        String messageType = (String) properties.get("messageType");
+        
+        // Always offload "reports" type
+        if ("report".equals(messageType)) {
+            return true;
+        }
+        
+        // Use size threshold for other types
+        return messageBody.getBytes(StandardCharsets.UTF_8).length > 100_000;
+    }
+}
+```
+
 ## Configuration Reference
 
 | Property | Default | Description |
 |----------|---------|-------------|
 | `azure.servicebus.connection-string` | *required* | Service Bus connection string |
 | `azure.servicebus.queue-name` | `my-queue` | Queue name |
-| `azure.storage.connection-string` | *required* | Blob Storage connection string |
+| `azure.storage.connection-string` | *required* | Blob Storage connection string (not needed in receive-only mode) |
 | `azure.storage.container-name` | `large-messages` | Container for large payloads |
 | `azure.servicebus.large-message-client.message-size-threshold` | `262144` (256 KB) | Size threshold for offloading |
 | `azure.servicebus.large-message-client.always-through-blob` | `false` | Force all messages through blob |
 | `azure.servicebus.large-message-client.cleanup-blob-on-delete` | `true` | Auto-delete blob on message delete |
 | `azure.servicebus.large-message-client.blob-key-prefix` | `""` | Prefix for blob names |
+| `azure.servicebus.large-message-client.sas-enabled` | `false` | Enable SAS URI generation |
+| `azure.servicebus.large-message-client.sas-token-validation-time` | `P7D` | SAS token validity (ISO-8601 duration) |
+| `azure.servicebus.large-message-client.message-property-for-blob-sas-uri` | `"$attachment.sas.uri"` | Message property for SAS URI |
+| `azure.servicebus.large-message-client.receive-only-mode` | `false` | Enable receive-only mode |
 | `azure.servicebus.large-message-client.retry-max-attempts` | `3` | Maximum retry attempts |
 | `azure.servicebus.large-message-client.retry-backoff-millis` | `1000` | Initial backoff delay (ms) |
 | `azure.servicebus.large-message-client.retry-backoff-multiplier` | `2.0` | Backoff multiplier |

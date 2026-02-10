@@ -11,6 +11,14 @@ A powerful Java Spring Boot library for handling large messages with Azure Servi
 - **Batch Operations**: Efficiently send and receive multiple messages with automatic batch splitting
 - **Spring Boot Auto-Configuration**: Simple integration with Spring Boot applications
 
+### Advanced Features
+- **SAS URI Support**: Generate Shared Access Signature URIs for secure blob access without storage credentials
+- **Receive-Only Mode**: Download blob payloads using only SAS URIs (no storage account credentials needed)
+- **Custom Blob Naming**: Implement custom blob naming strategies (e.g., `{tenantId}/{messageId}`)
+- **Custom Body Replacement**: Control what the message body becomes after blob offloading
+- **Dynamic Connection Strings**: Integrate with Key Vault or other dynamic credential sources
+- **Flexible Size Criteria**: Customize message offloading logic beyond simple size thresholds
+
 ### Azure-Native Features
 This library leverages unique Azure Service Bus capabilities:
 - **Scheduled Messages**: Schedule messages for future delivery with built-in support
