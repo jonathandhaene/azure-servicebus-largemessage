@@ -1,0 +1,12 @@
+azure:
+  servicebus:
+    connection-string: ${AZURE_SERVICEBUS_CONNECTION_STRING}
+    queue-name: ${AZURE_SERVICEBUS_QUEUE_NAME:my-queue}
+  storage:
+    connection-string: ${AZURE_STORAGE_CONNECTION_STRING}
+    container-name: ${AZURE_STORAGE_CONTAINER_NAME:large-messages}
+  extended-client:
+    message-size-threshold: 262144
+    always-through-blob: false
+    cleanup-blob-on-delete: true
+    blob-key-prefix: ""
