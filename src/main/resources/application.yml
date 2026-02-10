@@ -6,7 +6,41 @@ azure:
     connection-string: ${AZURE_STORAGE_CONNECTION_STRING}
     container-name: ${AZURE_STORAGE_CONTAINER_NAME:large-messages}
   extended-client:
+    # Message size threshold in bytes (default: 256 KB)
     message-size-threshold: 262144
+    
+    # Always store messages in blob storage, regardless of size
     always-through-blob: false
+    
+    # Automatically delete blob payloads when messages are consumed
     cleanup-blob-on-delete: true
+    
+    # Prefix for blob names (e.g., "messages/", "queue1/")
     blob-key-prefix: ""
+    
+    # Ignore blob payload not found errors (404)
+    # When true, messages with missing blobs are processed with empty body
+    ignore-payload-not-found: false
+    
+    # Use legacy reserved attribute name for backward compatibility
+    # When true, uses "ServiceBusLargePayloadSize" instead of "ExtendedPayloadSize"
+    use-legacy-reserved-attribute-name: true
+    
+    # Enable/disable payload support
+    # When false, all messages pass through directly without blob interaction
+    payload-support-enabled: true
+    
+    # Blob access tier: Hot, Cool, or Archive
+    # Leave empty for default tier
+    blob-access-tier: ""
+    
+    # Maximum number of user-defined application properties allowed (default: 9)
+    max-allowed-properties: 9
+    
+    # Encryption configuration for blob storage
+    encryption:
+      # Encryption scope name (optional)
+      encryption-scope: ""
+      
+      # Customer-provided encryption key (optional)
+      customer-provided-key: ""
