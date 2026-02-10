@@ -149,15 +149,16 @@ public class AzureServiceBusLargeMessageClient implements AutoCloseable {
                 // Validate application properties
                 ApplicationPropertyValidator.validate(applicationProperties, config.getMaxAllowedProperties());
 
-                int payloadSize = messageBody.getBytes(StandardCharsets.UTF_8).length;
+                // Determine if message should be offloaded using configured criteria
                 boolean shouldOffload = config.isPayloadSupportEnabled() && 
-                                       (config.isAlwaysThroughBlob() || payloadSize > config.getMessageSizeThreshold());
+                                       config.getMessageSizeCriteria().shouldOffload(messageBody, applicationProperties);
 
                 ServiceBusMessage message;
                 Map<String, Object> properties = new HashMap<>(applicationProperties);
 
                 if (shouldOffload) {
-                    logger.debug("Message size {} exceeds threshold or alwaysThroughBlob=true. Offloading to blob storage.", payloadSize);
+                    int payloadSize = messageBody.getBytes(StandardCharsets.UTF_8).length;
+                    logger.debug("Message size {} meets offload criteria. Offloading to blob storage.", payloadSize);
                     
                     // Create message object for blob name resolution
                     ServiceBusMessage tempMessage = new ServiceBusMessage(messageBody);
@@ -195,7 +196,7 @@ public class AzureServiceBusLargeMessageClient implements AutoCloseable {
                     
                     logger.debug("Payload offloaded to blob: {}", pointer);
                 } else {
-                    logger.debug("Message size {} is within threshold. Sending directly.", payloadSize);
+                    logger.debug("Message does not meet offload criteria. Sending directly.");
                     message = new ServiceBusMessage(messageBody);
                 }
 
@@ -295,15 +296,16 @@ public class AzureServiceBusLargeMessageClient implements AutoCloseable {
 
                 // Process each message individually for blob offloading
                 for (String messageBody : messageBodies) {
-                    int payloadSize = messageBody.getBytes(StandardCharsets.UTF_8).length;
+                    // Determine if message should be offloaded using configured criteria
                     boolean shouldOffload = config.isPayloadSupportEnabled() &&
-                                           (config.isAlwaysThroughBlob() || payloadSize > config.getMessageSizeThreshold());
+                                           config.getMessageSizeCriteria().shouldOffload(messageBody, applicationProperties);
 
                     ServiceBusMessage message;
                     Map<String, Object> properties = new HashMap<>(applicationProperties);
 
                     if (shouldOffload) {
-                        logger.debug("Batch message size {} exceeds threshold. Offloading to blob storage.", payloadSize);
+                        int payloadSize = messageBody.getBytes(StandardCharsets.UTF_8).length;
+                        logger.debug("Batch message size {} meets offload criteria. Offloading to blob storage.", payloadSize);
                         
                         // Create message object for blob name resolution
                         ServiceBusMessage tempMessage = new ServiceBusMessage(messageBody);
@@ -433,15 +435,16 @@ public class AzureServiceBusLargeMessageClient implements AutoCloseable {
                 // Validate application properties
                 ApplicationPropertyValidator.validate(applicationProperties, config.getMaxAllowedProperties());
 
-                int payloadSize = messageBody.getBytes(StandardCharsets.UTF_8).length;
+                // Determine if message should be offloaded using configured criteria
                 boolean shouldOffload = config.isPayloadSupportEnabled() &&
-                                       (config.isAlwaysThroughBlob() || payloadSize > config.getMessageSizeThreshold());
+                                       config.getMessageSizeCriteria().shouldOffload(messageBody, applicationProperties);
 
                 ServiceBusMessage message;
                 Map<String, Object> properties = new HashMap<>(applicationProperties);
 
                 if (shouldOffload) {
-                    logger.debug("Scheduled message size {} exceeds threshold. Offloading to blob storage.", payloadSize);
+                    int payloadSize = messageBody.getBytes(StandardCharsets.UTF_8).length;
+                    logger.debug("Scheduled message size {} meets offload criteria. Offloading to blob storage.", payloadSize);
                     
                     // Create message object for blob name resolution
                     ServiceBusMessage tempMessage = new ServiceBusMessage(messageBody);

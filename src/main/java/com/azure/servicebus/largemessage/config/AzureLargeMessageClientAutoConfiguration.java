@@ -95,7 +95,8 @@ public class AzureLargeMessageClientAutoConfiguration {
             LargeMessageClientConfiguration config,
             org.springframework.beans.factory.ObjectProvider<BlobPayloadStore> payloadStoreProvider,
             @Autowired(required = false) BlobNameResolver customBlobNameResolver,
-            @Autowired(required = false) MessageBodyReplacer customBodyReplacer) {
+            @Autowired(required = false) MessageBodyReplacer customBodyReplacer,
+            @Autowired(required = false) MessageSizeCriteria customMessageSizeCriteria) {
         
         if (serviceBusConnectionString == null || serviceBusConnectionString.isEmpty()) {
             throw new IllegalStateException(
@@ -112,6 +113,11 @@ public class AzureLargeMessageClientAutoConfiguration {
         // Set custom body replacer if provided
         if (customBodyReplacer != null) {
             config.setBodyReplacer(customBodyReplacer);
+        }
+
+        // Set custom message size criteria if provided
+        if (customMessageSizeCriteria != null) {
+            config.setMessageSizeCriteria(customMessageSizeCriteria);
         }
 
         // Get BlobPayloadStore if available (will be null in receive-only mode)

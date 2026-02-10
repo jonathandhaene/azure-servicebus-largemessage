@@ -97,6 +97,7 @@ public class LargeMessageClientConfiguration {
     // Custom resolvers (transient - not serializable from YAML)
     private transient BlobNameResolver blobNameResolver;
     private transient MessageBodyReplacer bodyReplacer;
+    private transient MessageSizeCriteria messageSizeCriteria;
 
     /**
      * Gets the message size threshold in bytes.
@@ -457,5 +458,22 @@ public class LargeMessageClientConfiguration {
 
     public void setBodyReplacer(MessageBodyReplacer bodyReplacer) {
         this.bodyReplacer = bodyReplacer;
+    }
+
+    /**
+     * Gets the message size criteria.
+     * Returns the default criteria if none is set.
+     *
+     * @return the message size criteria
+     */
+    public MessageSizeCriteria getMessageSizeCriteria() {
+        if (messageSizeCriteria == null) {
+            messageSizeCriteria = new DefaultMessageSizeCriteria(messageSizeThreshold, alwaysThroughBlob);
+        }
+        return messageSizeCriteria;
+    }
+
+    public void setMessageSizeCriteria(MessageSizeCriteria messageSizeCriteria) {
+        this.messageSizeCriteria = messageSizeCriteria;
     }
 }
