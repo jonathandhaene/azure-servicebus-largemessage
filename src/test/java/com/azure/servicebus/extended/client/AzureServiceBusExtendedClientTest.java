@@ -345,12 +345,11 @@ class AzureServiceBusExtendedClientTest {
     // ========== Dead Letter Queue Tests ==========
 
     @Test
-    void testProcessMessages_completesOnSuccess() {
-        // This test verifies the basic behavior hasn't changed
-        // Note: Full integration testing of processMessages with retry/DLQ
-        // would require more complex mocking of ServiceBusProcessorClient
+    void testConfiguration_dlqDefaults() {
+        // Verify DLQ configuration has expected defaults
         assertTrue(config.isDeadLetterOnFailure());
         assertEquals("ProcessingFailure", config.getDeadLetterReason());
+        assertEquals(10, config.getMaxDeliveryCount());
     }
 
     @Test
@@ -397,13 +396,5 @@ class AzureServiceBusExtendedClientTest {
         assertEquals(1000L, config.getRetryBackoffMillis());
         assertEquals(2.0, config.getRetryBackoffMultiplier());
         assertEquals(30000L, config.getRetryMaxBackoffMillis());
-    }
-
-    @Test
-    void testConfiguration_dlqDefaults() {
-        // Assert DLQ configuration defaults
-        assertTrue(config.isDeadLetterOnFailure());
-        assertEquals("ProcessingFailure", config.getDeadLetterReason());
-        assertEquals(10, config.getMaxDeliveryCount());
     }
 }

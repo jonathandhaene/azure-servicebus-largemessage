@@ -279,9 +279,9 @@ public class AzureServiceBusExtendedClient implements AutoCloseable {
             blobPointer = BlobPointer.fromJson(body);
             
             // Use retry for blob retrieval
-            String finalBlobPointer = body;
+            String blobPointerJson = body;
             body = retryHandler.executeWithRetry(() -> 
-                payloadStore.getPayload(BlobPointer.fromJson(finalBlobPointer))
+                payloadStore.getPayload(BlobPointer.fromJson(blobPointerJson))
             );
             
             // Remove internal marker properties

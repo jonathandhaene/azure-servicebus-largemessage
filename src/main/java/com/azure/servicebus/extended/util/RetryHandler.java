@@ -3,7 +3,7 @@ package com.azure.servicebus.extended.util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Supplier;
 
 /**
@@ -12,7 +12,6 @@ import java.util.function.Supplier;
  */
 public class RetryHandler {
     private static final Logger logger = LoggerFactory.getLogger(RetryHandler.class);
-    private static final Random random = new Random();
 
     private final int maxAttempts;
     private final long initialBackoffMillis;
@@ -99,7 +98,7 @@ public class RetryHandler {
         long baseDelay = Math.min((long) exponentialDelay, maxBackoffMillis);
         
         // Add jitter (±25% randomness) to prevent thundering herd
-        double jitterFactor = 0.75 + (random.nextDouble() * 0.5); // Range: 0.75 to 1.25
+        double jitterFactor = 0.75 + (ThreadLocalRandom.current().nextDouble() * 0.5); // Range: 0.75 to 1.25
         long delayWithJitter = (long) (baseDelay * jitterFactor);
         
         return Math.max(delayWithJitter, 0);
