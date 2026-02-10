@@ -194,7 +194,7 @@ public class AzureServiceBusLargeMessageClient implements AutoCloseable {
                 }
 
                 // Add user-agent header
-                properties.put(LargeMessageClientConfiguration.EXTENDED_CLIENT_USER_AGENT, 
+                properties.put(LargeMessageClientConfiguration.LARGE_MESSAGE_CLIENT_USER_AGENT, 
                               LargeMessageClientConfiguration.USER_AGENT_VALUE);
 
                 // Inject trace context if tracing is enabled
@@ -311,7 +311,7 @@ public class AzureServiceBusLargeMessageClient implements AutoCloseable {
                     }
 
                     // Add user-agent header
-                    properties.put(LargeMessageClientConfiguration.EXTENDED_CLIENT_USER_AGENT, 
+                    properties.put(LargeMessageClientConfiguration.LARGE_MESSAGE_CLIENT_USER_AGENT, 
                                   LargeMessageClientConfiguration.USER_AGENT_VALUE);
 
                     // Inject trace context if tracing is enabled
@@ -439,7 +439,7 @@ public class AzureServiceBusLargeMessageClient implements AutoCloseable {
                 }
 
                 // Add user-agent header
-                properties.put(LargeMessageClientConfiguration.EXTENDED_CLIENT_USER_AGENT, 
+                properties.put(LargeMessageClientConfiguration.LARGE_MESSAGE_CLIENT_USER_AGENT, 
                               LargeMessageClientConfiguration.USER_AGENT_VALUE);
 
                 // Inject trace context if tracing is enabled
@@ -624,7 +624,7 @@ public class AzureServiceBusLargeMessageClient implements AutoCloseable {
             }
             
             // Strip user-agent header
-            appProperties.remove(LargeMessageClientConfiguration.EXTENDED_CLIENT_USER_AGENT);
+            appProperties.remove(LargeMessageClientConfiguration.LARGE_MESSAGE_CLIENT_USER_AGENT);
 
             LargeServiceBusMessage largeMessage = new LargeServiceBusMessage(
                     message.getMessageId(),
