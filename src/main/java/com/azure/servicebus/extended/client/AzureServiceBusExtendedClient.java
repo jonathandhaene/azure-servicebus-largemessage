@@ -347,13 +347,12 @@ public class AzureServiceBusExtendedClient implements AutoCloseable {
             String connectionString,
             String queueName,
             int maxMessages) {
-        try {
-            ServiceBusReceiverClient dlqReceiverClient = new ServiceBusClientBuilder()
-                    .connectionString(connectionString)
-                    .receiver()
-                    .queueName(queueName)
-                    .subQueue(SubQueue.DEAD_LETTER_QUEUE)
-                    .buildClient();
+        try (ServiceBusReceiverClient dlqReceiverClient = new ServiceBusClientBuilder()
+                .connectionString(connectionString)
+                .receiver()
+                .queueName(queueName)
+                .subQueue(SubQueue.DEAD_LETTER_QUEUE)
+                .buildClient()) {
 
             List<ExtendedServiceBusMessage> extendedMessages = new ArrayList<>();
             
@@ -363,7 +362,6 @@ public class AzureServiceBusExtendedClient implements AutoCloseable {
                         extendedMessages.add(extendedMessage);
                     });
 
-            dlqReceiverClient.close();
             logger.debug("Received {} messages from dead-letter queue", extendedMessages.size());
             return extendedMessages;
         } catch (Exception e) {
@@ -374,13 +372,16 @@ public class AzureServiceBusExtendedClient implements AutoCloseable {
 
     /**
      * Processes messages from the dead-letter queue using a processor.
+     * Note: The returned processor is started but the caller is responsible for
+     * stopping it when done by calling close() on the returned client.
      *
      * @param connectionString the Service Bus connection string
      * @param queueName        the queue name
      * @param messageHandler   consumer to handle received dead-letter messages
      * @param errorHandler     consumer to handle errors
+     * @return the started processor client that must be closed by the caller
      */
-    public void processDeadLetterMessages(
+    public ServiceBusProcessorClient processDeadLetterMessages(
             String connectionString,
             String queueName,
             Consumer<ExtendedServiceBusMessage> messageHandler,
@@ -407,6 +408,7 @@ public class AzureServiceBusExtendedClient implements AutoCloseable {
 
         dlqProcessorClient.start();
         logger.info("Dead-letter message processor started for queue: {}", queueName);
+        return dlqProcessorClient;
     }
 
     /**

@@ -255,7 +255,7 @@ for (ExtendedServiceBusMessage msg : dlqMessages) {
 
 **Continuous Processing:**
 ```java
-client.processDeadLetterMessages(
+ServiceBusProcessorClient dlqProcessor = client.processDeadLetterMessages(
     connectionString,
     queueName,
     message -> {
@@ -267,6 +267,9 @@ client.processDeadLetterMessages(
         logger.error("DLQ processing error: {}", errorContext.getException());
     }
 );
+
+// Important: Stop the processor when done
+// dlqProcessor.close();
 ```
 
 ### Dead-Letter Reasons
