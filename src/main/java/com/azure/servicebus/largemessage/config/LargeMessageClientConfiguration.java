@@ -94,7 +94,8 @@ public class LargeMessageClientConfiguration {
     // Encryption (nested configuration)
     private EncryptionConfiguration encryption = new EncryptionConfiguration();
     
-    // Custom resolvers (transient - not serializable from YAML)
+    // Custom resolvers and criteria (transient - not serializable from YAML)
+    // These are runtime-injected beans that should not be persisted to configuration files
     private transient BlobNameResolver blobNameResolver;
     private transient MessageBodyReplacer bodyReplacer;
     private transient MessageSizeCriteria messageSizeCriteria;

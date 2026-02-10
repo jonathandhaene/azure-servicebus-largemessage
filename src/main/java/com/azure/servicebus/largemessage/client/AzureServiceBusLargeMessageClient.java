@@ -36,6 +36,7 @@ public class AzureServiceBusLargeMessageClient implements AutoCloseable {
     private final BlobPayloadStore payloadStore;
     private final LargeMessageClientConfiguration config;
     private final RetryHandler retryHandler;
+    private final ReceiveOnlyBlobResolver receiveOnlyResolver;
     private ServiceBusProcessorClient processorClient;
 
     /**
@@ -53,6 +54,7 @@ public class AzureServiceBusLargeMessageClient implements AutoCloseable {
             LargeMessageClientConfiguration config) {
         this.payloadStore = payloadStore;
         this.config = config;
+        this.receiveOnlyResolver = new ReceiveOnlyBlobResolver();
         this.retryHandler = new RetryHandler(
                 config.getRetryMaxAttempts(),
                 config.getRetryBackoffMillis(),
@@ -91,6 +93,7 @@ public class AzureServiceBusLargeMessageClient implements AutoCloseable {
         this.receiverClient = receiverClient;
         this.payloadStore = payloadStore;
         this.config = config;
+        this.receiveOnlyResolver = new ReceiveOnlyBlobResolver();
         this.retryHandler = new RetryHandler(
                 config.getRetryMaxAttempts(),
                 config.getRetryBackoffMillis(),
@@ -633,27 +636,24 @@ public class AzureServiceBusLargeMessageClient implements AutoCloseable {
                 logger.debug("Message contains blob pointer. Resolving payload...");
                 blobPointer = BlobPointer.fromJson(body);
                 
-                // Check if message has SAS URI property
-                String sasUri = appProperties.get(config.getMessagePropertyForBlobSasUri()) != null 
-                    ? String.valueOf(appProperties.get(config.getMessagePropertyForBlobSasUri())) 
-                    : null;
+                // Check if message has SAS URI property (get once and store)
+                Object sasUriObj = appProperties.get(config.getMessagePropertyForBlobSasUri());
+                String sasUri = sasUriObj != null ? String.valueOf(sasUriObj) : null;
                 
                 // Determine how to download the blob
                 if (sasUri != null && config.isReceiveOnlyMode()) {
                     // Use SAS URI for download (no storage credentials needed)
                     logger.debug("Receive-only mode: downloading payload using SAS URI");
-                    ReceiveOnlyBlobResolver resolver = new ReceiveOnlyBlobResolver();
                     String blobPointerJson = body;
-                    body = retryHandler.executeWithRetry(() -> resolver.getPayloadBySasUri(sasUri));
+                    body = retryHandler.executeWithRetry(() -> receiveOnlyResolver.getPayloadBySasUri(sasUri));
                     
                     // Remove SAS URI property from application properties
                     appProperties.remove(config.getMessagePropertyForBlobSasUri());
                 } else if (sasUri != null && payloadStore != null) {
                     // Prefer SAS URI if available, even with storage credentials
                     logger.debug("Downloading payload using SAS URI (SAS available)");
-                    ReceiveOnlyBlobResolver resolver = new ReceiveOnlyBlobResolver();
                     String blobPointerJson = body;
-                    body = retryHandler.executeWithRetry(() -> resolver.getPayloadBySasUri(sasUri));
+                    body = retryHandler.executeWithRetry(() -> receiveOnlyResolver.getPayloadBySasUri(sasUri));
                     
                     // Remove SAS URI property from application properties
                     appProperties.remove(config.getMessagePropertyForBlobSasUri());
