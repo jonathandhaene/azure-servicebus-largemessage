@@ -3,6 +3,7 @@ package com.azure.servicebus.largemessage.config;
 import com.azure.servicebus.largemessage.client.AzureServiceBusLargeMessageClient;
 import com.azure.servicebus.largemessage.store.BlobNameResolver;
 import com.azure.servicebus.largemessage.store.BlobPayloadStore;
+import com.azure.servicebus.largemessage.store.MessageBodyReplacer;
 import com.azure.storage.blob.BlobServiceClient;
 import com.azure.storage.blob.BlobServiceClientBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -80,7 +81,8 @@ public class AzureLargeMessageClientAutoConfiguration {
     public AzureServiceBusLargeMessageClient azureServiceBusLargeMessageClient(
             LargeMessageClientConfiguration config,
             org.springframework.beans.factory.ObjectProvider<BlobPayloadStore> payloadStoreProvider,
-            @Autowired(required = false) BlobNameResolver customBlobNameResolver) {
+            @Autowired(required = false) BlobNameResolver customBlobNameResolver,
+            @Autowired(required = false) MessageBodyReplacer customBodyReplacer) {
         
         if (serviceBusConnectionString == null || serviceBusConnectionString.isEmpty()) {
             throw new IllegalStateException(
@@ -92,6 +94,11 @@ public class AzureLargeMessageClientAutoConfiguration {
         // Set custom blob name resolver if provided
         if (customBlobNameResolver != null) {
             config.setBlobNameResolver(customBlobNameResolver);
+        }
+
+        // Set custom body replacer if provided
+        if (customBodyReplacer != null) {
+            config.setBodyReplacer(customBodyReplacer);
         }
 
         // Get BlobPayloadStore if available (will be null in receive-only mode)

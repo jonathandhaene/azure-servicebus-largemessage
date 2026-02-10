@@ -185,8 +185,9 @@ public class AzureServiceBusLargeMessageClient implements AutoCloseable {
                         }
                     }
                     
-                    // Create message with blob pointer as body
-                    message = new ServiceBusMessage(pointer.toJson());
+                    // Create message with blob pointer as body (using configured body replacer)
+                    String replacementBody = config.getBodyReplacer().replace(messageBody, pointer);
+                    message = new ServiceBusMessage(replacementBody);
                     
                     // Add metadata properties using configured attribute name
                     properties.put(config.getReservedAttributeName(), payloadSize);
@@ -315,8 +316,9 @@ public class AzureServiceBusLargeMessageClient implements AutoCloseable {
                             payloadStore.storePayload(blobName, messageBody)
                         );
                         
-                        // Create message with blob pointer as body
-                        message = new ServiceBusMessage(pointer.toJson());
+                        // Create message with blob pointer as body (using configured body replacer)
+                        String replacementBody = config.getBodyReplacer().replace(messageBody, pointer);
+                        message = new ServiceBusMessage(replacementBody);
                         
                         // Add metadata properties
                         properties.put(config.getReservedAttributeName(), payloadSize);
@@ -450,7 +452,9 @@ public class AzureServiceBusLargeMessageClient implements AutoCloseable {
                         payloadStore.storePayload(blobName, messageBody)
                     );
                     
-                    message = new ServiceBusMessage(pointer.toJson());
+                    // Create message with blob pointer as body (using configured body replacer)
+                    String replacementBody = config.getBodyReplacer().replace(messageBody, pointer);
+                    message = new ServiceBusMessage(replacementBody);
                     properties.put(config.getReservedAttributeName(), payloadSize);
                     properties.put(LargeMessageClientConfiguration.BLOB_POINTER_MARKER, "true");
                 } else {

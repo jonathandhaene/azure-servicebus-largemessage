@@ -2,6 +2,8 @@ package com.azure.servicebus.largemessage.config;
 
 import com.azure.servicebus.largemessage.store.BlobNameResolver;
 import com.azure.servicebus.largemessage.store.DefaultBlobNameResolver;
+import com.azure.servicebus.largemessage.store.DefaultMessageBodyReplacer;
+import com.azure.servicebus.largemessage.store.MessageBodyReplacer;
 import com.azure.servicebus.largemessage.util.BlobKeyPrefixValidator;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
@@ -94,6 +96,7 @@ public class LargeMessageClientConfiguration {
     
     // Custom resolvers (transient - not serializable from YAML)
     private transient BlobNameResolver blobNameResolver;
+    private transient MessageBodyReplacer bodyReplacer;
 
     /**
      * Gets the message size threshold in bytes.
@@ -437,5 +440,22 @@ public class LargeMessageClientConfiguration {
 
     public void setBlobNameResolver(BlobNameResolver blobNameResolver) {
         this.blobNameResolver = blobNameResolver;
+    }
+
+    /**
+     * Gets the message body replacer.
+     * Returns the default replacer if none is set.
+     *
+     * @return the message body replacer
+     */
+    public MessageBodyReplacer getBodyReplacer() {
+        if (bodyReplacer == null) {
+            bodyReplacer = new DefaultMessageBodyReplacer();
+        }
+        return bodyReplacer;
+    }
+
+    public void setBodyReplacer(MessageBodyReplacer bodyReplacer) {
+        this.bodyReplacer = bodyReplacer;
     }
 }
