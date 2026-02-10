@@ -1,15 +1,15 @@
-package com.azure.servicebus.extended.config;
+package com.azure.servicebus.largemessage.config;
 
-import com.azure.servicebus.extended.util.BlobKeyPrefixValidator;
+import com.azure.servicebus.largemessage.util.BlobKeyPrefixValidator;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 /**
- * Configuration properties for the Azure Service Bus Extended Client.
+ * Configuration properties for the Azure Service Bus Large Message Client.
  */
 @Component
-@ConfigurationProperties(prefix = "azure.extended-client")
-public class ExtendedClientConfiguration {
+@ConfigurationProperties(prefix = "azure.large-message-client")
+public class LargeMessageClientConfiguration {
     
     /**
      * Default message size threshold: 256 KB (262,144 bytes).
@@ -30,17 +30,17 @@ public class ExtendedClientConfiguration {
     /**
      * Application property marker indicating the message body contains a blob pointer.
      */
-    public static final String BLOB_POINTER_MARKER = "com.azure.servicebus.extended.BlobPointer";
+    public static final String BLOB_POINTER_MARKER = "com.azure.servicebus.largemessage.BlobPointer";
 
     /**
-     * Extended client user agent identifier.
+     * Large message client user agent identifier.
      */
-    public static final String EXTENDED_CLIENT_USER_AGENT = "ExtendedClientUserAgent";
+    public static final String LARGE_MESSAGE_CLIENT_USER_AGENT = "LargeMessageClientUserAgent";
 
     /**
      * User agent value.
      */
-    public static final String USER_AGENT_VALUE = "AzureServiceBusExtendedClient/1.0.0-SNAPSHOT";
+    public static final String USER_AGENT_VALUE = "AzureServiceBusLargeMessageClient/1.0.0-SNAPSHOT";
 
     /**
      * Maximum allowed application properties (excluding reserved ones).

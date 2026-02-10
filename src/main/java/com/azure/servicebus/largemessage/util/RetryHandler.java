@@ -1,4 +1,4 @@
-package com.azure.servicebus.extended.util;
+package com.azure.servicebus.largemessage.util;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

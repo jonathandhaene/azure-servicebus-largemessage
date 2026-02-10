@@ -1,12 +1,12 @@
-package com.azure.servicebus.extended.model;
+package com.azure.servicebus.largemessage.model;
 
 import java.util.Map;
 
 /**
- * Wrapper for received Service Bus messages with extended client support.
+ * Wrapper for received Service Bus messages with large message client support.
  * Contains the message body (resolved from blob if needed) and metadata.
  */
-public class ExtendedServiceBusMessage {
+public class LargeServiceBusMessage {
     private final String messageId;
     private final String body;
     private final Map<String, Object> applicationProperties;
@@ -16,7 +16,7 @@ public class ExtendedServiceBusMessage {
     private final String deadLetterDescription;
     private final long deliveryCount;
 
-    public ExtendedServiceBusMessage(
+    public LargeServiceBusMessage(
             String messageId,
             String body,
             Map<String, Object> applicationProperties,
@@ -25,7 +25,7 @@ public class ExtendedServiceBusMessage {
         this(messageId, body, applicationProperties, payloadFromBlob, blobPointer, null, null, 0);
     }
 
-    public ExtendedServiceBusMessage(
+    public LargeServiceBusMessage(
             String messageId,
             String body,
             Map<String, Object> applicationProperties,
@@ -118,7 +118,7 @@ public class ExtendedServiceBusMessage {
 
     @Override
     public String toString() {
-        return "ExtendedServiceBusMessage{" +
+        return "LargeServiceBusMessage{" +
                 "messageId='" + messageId + '\'' +
                 ", bodyLength=" + (body != null ? body.length() : 0) +
                 ", payloadFromBlob=" + payloadFromBlob +

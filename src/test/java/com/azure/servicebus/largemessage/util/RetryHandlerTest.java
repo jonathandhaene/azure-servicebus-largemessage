@@ -1,4 +1,4 @@
-package com.azure.servicebus.extended.util;
+package com.azure.servicebus.largemessage.util;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

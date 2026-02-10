@@ -1,2 +1,2 @@
 org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
-com.azure.servicebus.extended.config.AzureExtendedClientAutoConfiguration
+com.azure.servicebus.largemessage.config.AzureLargeMessageClientAutoConfiguration

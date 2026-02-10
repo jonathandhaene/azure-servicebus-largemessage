@@ -1,9 +1,9 @@
-package com.azure.servicebus.extended.example;
+package com.azure.servicebus.largemessage.example;
 
-import com.azure.servicebus.extended.client.AzureServiceBusExtendedClient;
-import com.azure.servicebus.extended.config.ExtendedClientConfiguration;
-import com.azure.servicebus.extended.model.ExtendedServiceBusMessage;
-import com.azure.servicebus.extended.store.BlobPayloadStore;
+import com.azure.servicebus.largemessage.client.AzureServiceBusLargeMessageClient;
+import com.azure.servicebus.largemessage.config.LargeMessageClientConfiguration;
+import com.azure.servicebus.largemessage.model.LargeServiceBusMessage;
+import com.azure.servicebus.largemessage.store.BlobPayloadStore;
 import com.azure.storage.blob.BlobServiceClient;
 import com.azure.storage.blob.BlobServiceClientBuilder;
 import org.slf4j.Logger;
@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Example Spring Boot application demonstrating the Azure Service Bus Extended Client.
+ * Example Spring Boot application demonstrating the Azure Service Bus Large Message Client.
  * 
  * This application shows how to:
  * - Send large messages (automatically offloaded to blob storage)
@@ -28,7 +28,7 @@ import java.util.Map;
  * - Retry logic (automatic on send/receive operations)
  * - Dead Letter Queue (DLQ) support
  */
-@SpringBootApplication(scanBasePackages = "com.azure.servicebus.extended")
+@SpringBootApplication(scanBasePackages = "com.azure.servicebus.largemessage")
 public class ExampleApplication {
     private static final Logger logger = LoggerFactory.getLogger(ExampleApplication.class);
 
@@ -37,10 +37,10 @@ public class ExampleApplication {
     }
 
     @Bean
-    public CommandLineRunner demo(AzureServiceBusExtendedClient client) {
+    public CommandLineRunner demo(AzureServiceBusLargeMessageClient client) {
         return args -> {
             try {
-                logger.info("=== Azure Service Bus Extended Client Example ===");
+                logger.info("=== Azure Service Bus Large Message Client Example ===");
 
                 // Example 1: Send a large message (will be automatically offloaded to blob)
                 logger.info("\n--- Example 1: Sending Large Message ---");
@@ -69,10 +69,10 @@ public class ExampleApplication {
 
                 // Example 3: Receive and process messages
                 logger.info("\n--- Example 3: Receiving Messages ---");
-                List<ExtendedServiceBusMessage> messages = client.receiveMessages(10);
+                List<LargeServiceBusMessage> messages = client.receiveMessages(10);
                 logger.info("Received {} messages", messages.size());
 
-                for (ExtendedServiceBusMessage message : messages) {
+                for (LargeServiceBusMessage message : messages) {
                     logger.info("Processing message: {}", message.getMessageId());
                     logger.info("  - Body length: {} bytes", message.getBody().length());
                     logger.info("  - From blob: {}", message.isPayloadFromBlob());
@@ -107,7 +107,7 @@ public class ExampleApplication {
             } finally {
                 // Note: In a real application, you might want to keep the client open
                 // For this example, we'll close it after processing
-                logger.info("Closing extended client...");
+                logger.info("Closing large message client...");
                 client.close();
             }
         };

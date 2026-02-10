@@ -1,7 +1,7 @@
-package com.azure.servicebus.extended.store;
+package com.azure.servicebus.largemessage.store;
 
-import com.azure.servicebus.extended.config.ExtendedClientConfiguration;
-import com.azure.servicebus.extended.model.BlobPointer;
+import com.azure.servicebus.largemessage.config.LargeMessageClientConfiguration;
+import com.azure.servicebus.largemessage.model.BlobPointer;
 import com.azure.storage.blob.BlobClient;
 import com.azure.storage.blob.BlobContainerClient;
 import com.azure.storage.blob.BlobServiceClient;
@@ -26,7 +26,7 @@ public class BlobPayloadStore {
 
     private final BlobContainerClient containerClient;
     private final String containerName;
-    private final ExtendedClientConfiguration config;
+    private final LargeMessageClientConfiguration config;
 
     /**
      * Creates a new BlobPayloadStore.
@@ -43,9 +43,9 @@ public class BlobPayloadStore {
      *
      * @param blobServiceClient the Azure Blob Service client
      * @param containerName     the name of the container to use for storing payloads
-     * @param config           the extended client configuration
+     * @param config           the large message client configuration
      */
-    public BlobPayloadStore(BlobServiceClient blobServiceClient, String containerName, ExtendedClientConfiguration config) {
+    public BlobPayloadStore(BlobServiceClient blobServiceClient, String containerName, LargeMessageClientConfiguration config) {
         this.containerName = containerName;
         this.config = config;
         this.containerClient = blobServiceClient.getBlobContainerClient(containerName);
