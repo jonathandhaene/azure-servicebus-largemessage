@@ -75,6 +75,11 @@ public class LargeMessageClientConfiguration {
     private String blobAccessTier = null; // Hot, Cool, Archive
     private int blobTtlDays = 0; // 0 = disabled
     
+    // SAS URI configuration
+    private boolean sasEnabled = false;
+    private java.time.Duration sasTokenValidationTime = java.time.Duration.ofDays(7);
+    private String messagePropertyForBlobSasUri = "$attachment.sas.uri";
+    
     // Duplicate detection
     private boolean enableDuplicateDetectionId = false;
     
@@ -356,5 +361,44 @@ public class LargeMessageClientConfiguration {
 
     public void setEncryption(EncryptionConfiguration encryption) {
         this.encryption = encryption;
+    }
+
+    /**
+     * Indicates whether SAS URI generation is enabled.
+     *
+     * @return true if SAS URI generation is enabled, false otherwise
+     */
+    public boolean isSasEnabled() {
+        return sasEnabled;
+    }
+
+    public void setSasEnabled(boolean sasEnabled) {
+        this.sasEnabled = sasEnabled;
+    }
+
+    /**
+     * Gets the SAS token validation time duration.
+     *
+     * @return the SAS token validation time
+     */
+    public java.time.Duration getSasTokenValidationTime() {
+        return sasTokenValidationTime;
+    }
+
+    public void setSasTokenValidationTime(java.time.Duration sasTokenValidationTime) {
+        this.sasTokenValidationTime = sasTokenValidationTime;
+    }
+
+    /**
+     * Gets the message property name for storing blob SAS URI.
+     *
+     * @return the message property name for SAS URI
+     */
+    public String getMessagePropertyForBlobSasUri() {
+        return messagePropertyForBlobSasUri;
+    }
+
+    public void setMessagePropertyForBlobSasUri(String messagePropertyForBlobSasUri) {
+        this.messagePropertyForBlobSasUri = messagePropertyForBlobSasUri;
     }
 }

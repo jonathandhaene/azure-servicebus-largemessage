@@ -19,6 +19,11 @@ azure:
       dead-letter-on-failure: true      # Whether to dead-letter messages on processing failure
       dead-letter-reason: "ProcessingFailure"  # Default dead-letter reason
       max-delivery-count: 10            # Informational only - actual enforcement is on Service Bus queue
+      
+      # SAS URI configuration
+      sas-enabled: false                # Whether to generate SAS URIs for blob access
+      sas-token-validation-time: P7D    # SAS token validity duration (ISO-8601 format, default: 7 days)
+      message-property-for-blob-sas-uri: "$attachment.sas.uri"  # Message property name for SAS URI
   storage:
     connection-string: ${AZURE_STORAGE_CONNECTION_STRING}
     container-name: ${AZURE_STORAGE_CONTAINER_NAME:large-messages}

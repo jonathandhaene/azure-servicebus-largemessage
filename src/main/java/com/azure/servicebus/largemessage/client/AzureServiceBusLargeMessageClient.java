@@ -166,6 +166,18 @@ public class AzureServiceBusLargeMessageClient implements AutoCloseable {
                         payloadStore.storePayload(blobName, messageBody)
                     );
                     
+                    // Generate SAS URI if enabled
+                    if (config.isSasEnabled()) {
+                        try {
+                            String sasUri = payloadStore.generateSasUri(pointer, config.getSasTokenValidationTime());
+                            properties.put(config.getMessagePropertyForBlobSasUri(), sasUri);
+                            logger.debug("Generated SAS URI and added to message properties");
+                        } catch (Exception e) {
+                            logger.error("Failed to generate SAS URI, proceeding without it", e);
+                            // Continue without SAS URI - receiver can still use storage credentials if available
+                        }
+                    }
+                    
                     // Create message with blob pointer as body
                     message = new ServiceBusMessage(pointer.toJson());
                     
