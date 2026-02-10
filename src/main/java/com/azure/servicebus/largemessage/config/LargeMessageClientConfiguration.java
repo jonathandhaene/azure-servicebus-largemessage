@@ -1,5 +1,9 @@
 package com.azure.servicebus.largemessage.config;
 
+import com.azure.servicebus.largemessage.store.BlobNameResolver;
+import com.azure.servicebus.largemessage.store.DefaultBlobNameResolver;
+import com.azure.servicebus.largemessage.store.DefaultMessageBodyReplacer;
+import com.azure.servicebus.largemessage.store.MessageBodyReplacer;
 import com.azure.servicebus.largemessage.util.BlobKeyPrefixValidator;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
@@ -67,6 +71,7 @@ public class LargeMessageClientConfiguration {
     private boolean payloadSupportEnabled = true;
     private boolean useLegacyReservedAttributeName = true;
     private boolean ignorePayloadNotFound = false;
+    private boolean receiveOnlyMode = false;
     
     // Validation
     private int maxAllowedProperties = MAX_ALLOWED_PROPERTIES;
@@ -74,6 +79,11 @@ public class LargeMessageClientConfiguration {
     // Blob configuration
     private String blobAccessTier = null; // Hot, Cool, Archive
     private int blobTtlDays = 0; // 0 = disabled
+    
+    // SAS URI configuration
+    private boolean sasEnabled = false;
+    private java.time.Duration sasTokenValidationTime = java.time.Duration.ofDays(7);
+    private String messagePropertyForBlobSasUri = "$attachment.sas.uri";
     
     // Duplicate detection
     private boolean enableDuplicateDetectionId = false;
@@ -83,6 +93,12 @@ public class LargeMessageClientConfiguration {
     
     // Encryption (nested configuration)
     private EncryptionConfiguration encryption = new EncryptionConfiguration();
+    
+    // Custom resolvers and criteria (transient - not serializable from YAML)
+    // These are runtime-injected beans that should not be persisted to configuration files
+    private transient BlobNameResolver blobNameResolver;
+    private transient MessageBodyReplacer bodyReplacer;
+    private transient MessageSizeCriteria messageSizeCriteria;
 
     /**
      * Gets the message size threshold in bytes.
@@ -281,6 +297,20 @@ public class LargeMessageClientConfiguration {
     }
 
     /**
+     * Indicates whether receive-only mode is enabled.
+     * In receive-only mode, messages can be received using SAS URIs without storage credentials.
+     *
+     * @return true if receive-only mode is enabled, false otherwise
+     */
+    public boolean isReceiveOnlyMode() {
+        return receiveOnlyMode;
+    }
+
+    public void setReceiveOnlyMode(boolean receiveOnlyMode) {
+        this.receiveOnlyMode = receiveOnlyMode;
+    }
+
+    /**
      * Gets the maximum allowed application properties count.
      *
      * @return the maximum allowed properties
@@ -356,5 +386,95 @@ public class LargeMessageClientConfiguration {
 
     public void setEncryption(EncryptionConfiguration encryption) {
         this.encryption = encryption;
+    }
+
+    /**
+     * Indicates whether SAS URI generation is enabled.
+     *
+     * @return true if SAS URI generation is enabled, false otherwise
+     */
+    public boolean isSasEnabled() {
+        return sasEnabled;
+    }
+
+    public void setSasEnabled(boolean sasEnabled) {
+        this.sasEnabled = sasEnabled;
+    }
+
+    /**
+     * Gets the SAS token validation time duration.
+     *
+     * @return the SAS token validation time
+     */
+    public java.time.Duration getSasTokenValidationTime() {
+        return sasTokenValidationTime;
+    }
+
+    public void setSasTokenValidationTime(java.time.Duration sasTokenValidationTime) {
+        this.sasTokenValidationTime = sasTokenValidationTime;
+    }
+
+    /**
+     * Gets the message property name for storing blob SAS URI.
+     *
+     * @return the message property name for SAS URI
+     */
+    public String getMessagePropertyForBlobSasUri() {
+        return messagePropertyForBlobSasUri;
+    }
+
+    public void setMessagePropertyForBlobSasUri(String messagePropertyForBlobSasUri) {
+        this.messagePropertyForBlobSasUri = messagePropertyForBlobSasUri;
+    }
+
+    /**
+     * Gets the blob name resolver.
+     * Returns the default resolver if none is set.
+     *
+     * @return the blob name resolver
+     */
+    public BlobNameResolver getBlobNameResolver() {
+        if (blobNameResolver == null) {
+            blobNameResolver = new DefaultBlobNameResolver(blobKeyPrefix);
+        }
+        return blobNameResolver;
+    }
+
+    public void setBlobNameResolver(BlobNameResolver blobNameResolver) {
+        this.blobNameResolver = blobNameResolver;
+    }
+
+    /**
+     * Gets the message body replacer.
+     * Returns the default replacer if none is set.
+     *
+     * @return the message body replacer
+     */
+    public MessageBodyReplacer getBodyReplacer() {
+        if (bodyReplacer == null) {
+            bodyReplacer = new DefaultMessageBodyReplacer();
+        }
+        return bodyReplacer;
+    }
+
+    public void setBodyReplacer(MessageBodyReplacer bodyReplacer) {
+        this.bodyReplacer = bodyReplacer;
+    }
+
+    /**
+     * Gets the message size criteria.
+     * Returns the default criteria if none is set.
+     *
+     * @return the message size criteria
+     */
+    public MessageSizeCriteria getMessageSizeCriteria() {
+        if (messageSizeCriteria == null) {
+            messageSizeCriteria = new DefaultMessageSizeCriteria(messageSizeThreshold, alwaysThroughBlob);
+        }
+        return messageSizeCriteria;
+    }
+
+    public void setMessageSizeCriteria(MessageSizeCriteria messageSizeCriteria) {
+        this.messageSizeCriteria = messageSizeCriteria;
     }
 }

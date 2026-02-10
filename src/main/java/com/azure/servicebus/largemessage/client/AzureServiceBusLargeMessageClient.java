@@ -7,6 +7,7 @@ import com.azure.servicebus.largemessage.config.LargeMessageClientConfiguration;
 import com.azure.servicebus.largemessage.model.BlobPointer;
 import com.azure.servicebus.largemessage.model.LargeServiceBusMessage;
 import com.azure.servicebus.largemessage.store.BlobPayloadStore;
+import com.azure.servicebus.largemessage.store.ReceiveOnlyBlobResolver;
 import com.azure.servicebus.largemessage.util.ApplicationPropertyValidator;
 import com.azure.servicebus.largemessage.util.DuplicateDetectionHelper;
 import com.azure.servicebus.largemessage.util.RetryHandler;
@@ -35,6 +36,7 @@ public class AzureServiceBusLargeMessageClient implements AutoCloseable {
     private final BlobPayloadStore payloadStore;
     private final LargeMessageClientConfiguration config;
     private final RetryHandler retryHandler;
+    private final ReceiveOnlyBlobResolver receiveOnlyResolver;
     private ServiceBusProcessorClient processorClient;
 
     /**
@@ -52,6 +54,7 @@ public class AzureServiceBusLargeMessageClient implements AutoCloseable {
             LargeMessageClientConfiguration config) {
         this.payloadStore = payloadStore;
         this.config = config;
+        this.receiveOnlyResolver = new ReceiveOnlyBlobResolver();
         this.retryHandler = new RetryHandler(
                 config.getRetryMaxAttempts(),
                 config.getRetryBackoffMillis(),
@@ -90,6 +93,7 @@ public class AzureServiceBusLargeMessageClient implements AutoCloseable {
         this.receiverClient = receiverClient;
         this.payloadStore = payloadStore;
         this.config = config;
+        this.receiveOnlyResolver = new ReceiveOnlyBlobResolver();
         this.retryHandler = new RetryHandler(
                 config.getRetryMaxAttempts(),
                 config.getRetryBackoffMillis(),
@@ -148,26 +152,46 @@ public class AzureServiceBusLargeMessageClient implements AutoCloseable {
                 // Validate application properties
                 ApplicationPropertyValidator.validate(applicationProperties, config.getMaxAllowedProperties());
 
-                int payloadSize = messageBody.getBytes(StandardCharsets.UTF_8).length;
+                // Determine if message should be offloaded using configured criteria
                 boolean shouldOffload = config.isPayloadSupportEnabled() && 
-                                       (config.isAlwaysThroughBlob() || payloadSize > config.getMessageSizeThreshold());
+                                       config.getMessageSizeCriteria().shouldOffload(messageBody, applicationProperties);
 
                 ServiceBusMessage message;
                 Map<String, Object> properties = new HashMap<>(applicationProperties);
 
                 if (shouldOffload) {
-                    logger.debug("Message size {} exceeds threshold or alwaysThroughBlob=true. Offloading to blob storage.", payloadSize);
+                    int payloadSize = messageBody.getBytes(StandardCharsets.UTF_8).length;
+                    logger.debug("Message size {} meets offload criteria. Offloading to blob storage.", payloadSize);
                     
-                    // Generate unique blob name
-                    String blobName = config.getBlobKeyPrefix() + UUID.randomUUID().toString();
+                    // Create message object for blob name resolution
+                    ServiceBusMessage tempMessage = new ServiceBusMessage(messageBody);
+                    if (sessionId != null && !sessionId.isEmpty()) {
+                        tempMessage.setSessionId(sessionId);
+                    }
+                    
+                    // Generate blob name using configured resolver
+                    String blobName = config.getBlobNameResolver().resolve(tempMessage);
                     
                     // Store payload in blob with retry
                     BlobPointer pointer = retryHandler.executeWithRetry(() -> 
                         payloadStore.storePayload(blobName, messageBody)
                     );
                     
-                    // Create message with blob pointer as body
-                    message = new ServiceBusMessage(pointer.toJson());
+                    // Generate SAS URI if enabled
+                    if (config.isSasEnabled()) {
+                        try {
+                            String sasUri = payloadStore.generateSasUri(pointer, config.getSasTokenValidationTime());
+                            properties.put(config.getMessagePropertyForBlobSasUri(), sasUri);
+                            logger.debug("Generated SAS URI and added to message properties");
+                        } catch (Exception e) {
+                            logger.error("Failed to generate SAS URI, proceeding without it", e);
+                            // Continue without SAS URI - receiver can still use storage credentials if available
+                        }
+                    }
+                    
+                    // Create message with blob pointer as body (using configured body replacer)
+                    String replacementBody = config.getBodyReplacer().replace(messageBody, pointer);
+                    message = new ServiceBusMessage(replacementBody);
                     
                     // Add metadata properties using configured attribute name
                     properties.put(config.getReservedAttributeName(), payloadSize);
@@ -175,7 +199,7 @@ public class AzureServiceBusLargeMessageClient implements AutoCloseable {
                     
                     logger.debug("Payload offloaded to blob: {}", pointer);
                 } else {
-                    logger.debug("Message size {} is within threshold. Sending directly.", payloadSize);
+                    logger.debug("Message does not meet offload criteria. Sending directly.");
                     message = new ServiceBusMessage(messageBody);
                 }
 
@@ -275,26 +299,31 @@ public class AzureServiceBusLargeMessageClient implements AutoCloseable {
 
                 // Process each message individually for blob offloading
                 for (String messageBody : messageBodies) {
-                    int payloadSize = messageBody.getBytes(StandardCharsets.UTF_8).length;
+                    // Determine if message should be offloaded using configured criteria
                     boolean shouldOffload = config.isPayloadSupportEnabled() &&
-                                           (config.isAlwaysThroughBlob() || payloadSize > config.getMessageSizeThreshold());
+                                           config.getMessageSizeCriteria().shouldOffload(messageBody, applicationProperties);
 
                     ServiceBusMessage message;
                     Map<String, Object> properties = new HashMap<>(applicationProperties);
 
                     if (shouldOffload) {
-                        logger.debug("Batch message size {} exceeds threshold. Offloading to blob storage.", payloadSize);
+                        int payloadSize = messageBody.getBytes(StandardCharsets.UTF_8).length;
+                        logger.debug("Batch message size {} meets offload criteria. Offloading to blob storage.", payloadSize);
                         
-                        // Generate unique blob name
-                        String blobName = config.getBlobKeyPrefix() + UUID.randomUUID().toString();
+                        // Create message object for blob name resolution
+                        ServiceBusMessage tempMessage = new ServiceBusMessage(messageBody);
+                        
+                        // Generate blob name using configured resolver
+                        String blobName = config.getBlobNameResolver().resolve(tempMessage);
                         
                         // Store payload in blob with retry
                         BlobPointer pointer = retryHandler.executeWithRetry(() -> 
                             payloadStore.storePayload(blobName, messageBody)
                         );
                         
-                        // Create message with blob pointer as body
-                        message = new ServiceBusMessage(pointer.toJson());
+                        // Create message with blob pointer as body (using configured body replacer)
+                        String replacementBody = config.getBodyReplacer().replace(messageBody, pointer);
+                        message = new ServiceBusMessage(replacementBody);
                         
                         // Add metadata properties
                         properties.put(config.getReservedAttributeName(), payloadSize);
@@ -409,22 +438,29 @@ public class AzureServiceBusLargeMessageClient implements AutoCloseable {
                 // Validate application properties
                 ApplicationPropertyValidator.validate(applicationProperties, config.getMaxAllowedProperties());
 
-                int payloadSize = messageBody.getBytes(StandardCharsets.UTF_8).length;
+                // Determine if message should be offloaded using configured criteria
                 boolean shouldOffload = config.isPayloadSupportEnabled() &&
-                                       (config.isAlwaysThroughBlob() || payloadSize > config.getMessageSizeThreshold());
+                                       config.getMessageSizeCriteria().shouldOffload(messageBody, applicationProperties);
 
                 ServiceBusMessage message;
                 Map<String, Object> properties = new HashMap<>(applicationProperties);
 
                 if (shouldOffload) {
-                    logger.debug("Scheduled message size {} exceeds threshold. Offloading to blob storage.", payloadSize);
+                    int payloadSize = messageBody.getBytes(StandardCharsets.UTF_8).length;
+                    logger.debug("Scheduled message size {} meets offload criteria. Offloading to blob storage.", payloadSize);
                     
-                    String blobName = config.getBlobKeyPrefix() + UUID.randomUUID().toString();
+                    // Create message object for blob name resolution
+                    ServiceBusMessage tempMessage = new ServiceBusMessage(messageBody);
+                    
+                    // Generate blob name using configured resolver
+                    String blobName = config.getBlobNameResolver().resolve(tempMessage);
                     BlobPointer pointer = retryHandler.executeWithRetry(() -> 
                         payloadStore.storePayload(blobName, messageBody)
                     );
                     
-                    message = new ServiceBusMessage(pointer.toJson());
+                    // Create message with blob pointer as body (using configured body replacer)
+                    String replacementBody = config.getBodyReplacer().replace(messageBody, pointer);
+                    message = new ServiceBusMessage(replacementBody);
                     properties.put(config.getReservedAttributeName(), payloadSize);
                     properties.put(LargeMessageClientConfiguration.BLOB_POINTER_MARKER, "true");
                 } else {
@@ -600,11 +636,38 @@ public class AzureServiceBusLargeMessageClient implements AutoCloseable {
                 logger.debug("Message contains blob pointer. Resolving payload...");
                 blobPointer = BlobPointer.fromJson(body);
                 
-                // Use retry for blob retrieval
-                String blobPointerJson = body;
-                body = retryHandler.executeWithRetry(() -> 
-                    payloadStore.getPayload(BlobPointer.fromJson(blobPointerJson))
-                );
+                // Check if message has SAS URI property (get once and store)
+                Object sasUriObj = appProperties.get(config.getMessagePropertyForBlobSasUri());
+                String sasUri = sasUriObj != null ? String.valueOf(sasUriObj) : null;
+                
+                // Determine how to download the blob
+                if (sasUri != null && config.isReceiveOnlyMode()) {
+                    // Use SAS URI for download (no storage credentials needed)
+                    logger.debug("Receive-only mode: downloading payload using SAS URI");
+                    String blobPointerJson = body;
+                    body = retryHandler.executeWithRetry(() -> receiveOnlyResolver.getPayloadBySasUri(sasUri));
+                    
+                    // Remove SAS URI property from application properties
+                    appProperties.remove(config.getMessagePropertyForBlobSasUri());
+                } else if (sasUri != null && payloadStore != null) {
+                    // Prefer SAS URI if available, even with storage credentials
+                    logger.debug("Downloading payload using SAS URI (SAS available)");
+                    String blobPointerJson = body;
+                    body = retryHandler.executeWithRetry(() -> receiveOnlyResolver.getPayloadBySasUri(sasUri));
+                    
+                    // Remove SAS URI property from application properties
+                    appProperties.remove(config.getMessagePropertyForBlobSasUri());
+                } else if (payloadStore != null) {
+                    // Use storage credentials to download
+                    logger.debug("Downloading payload using storage credentials");
+                    String blobPointerJson = body;
+                    body = retryHandler.executeWithRetry(() -> 
+                        payloadStore.getPayload(BlobPointer.fromJson(blobPointerJson))
+                    );
+                } else {
+                    logger.error("Cannot download blob payload: no SAS URI and no storage credentials available");
+                    throw new IllegalStateException("Cannot download blob payload: no SAS URI and no storage credentials available");
+                }
                 
                 // Handle null payload (ignorePayloadNotFound enabled)
                 if (body == null) {

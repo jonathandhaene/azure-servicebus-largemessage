@@ -2,6 +2,7 @@ package com.azure.servicebus.largemessage.store;
 
 import com.azure.servicebus.largemessage.config.LargeMessageClientConfiguration;
 import com.azure.servicebus.largemessage.model.BlobPointer;
+import com.azure.servicebus.largemessage.util.SasTokenGenerator;
 import com.azure.storage.blob.BlobClient;
 import com.azure.storage.blob.BlobContainerClient;
 import com.azure.storage.blob.BlobServiceClient;
@@ -12,6 +13,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -228,5 +230,18 @@ public class BlobPayloadStore {
         }
 
         return deletedCount;
+    }
+
+    /**
+     * Generates a SAS URI for the specified blob pointer.
+     *
+     * @param pointer  the blob pointer referencing the payload
+     * @param validFor the duration for which the SAS token should be valid
+     * @return the SAS URI as a string
+     */
+    public String generateSasUri(BlobPointer pointer, Duration validFor) {
+        logger.debug("Generating SAS URI for blob: {}", pointer.getBlobName());
+        BlobClient blobClient = containerClient.getBlobClient(pointer.getBlobName());
+        return SasTokenGenerator.generateBlobSasUri(blobClient, validFor);
     }
 }
