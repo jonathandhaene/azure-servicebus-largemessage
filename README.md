@@ -1,6 +1,13 @@
 # Azure Service Bus Extended Client Library for Java Spring Boot
 
-A production-ready library that transparently offloads large message payloads to Azure Blob Storage, similar to the [AWS SQS Extended Client Library](https://github.com/awslabs/amazon-sqs-java-extended-client-lib).
+> ⚠️ **DISCLAIMER: FOR ILLUSTRATION PURPOSES ONLY**
+> 
+> This project is a **proof-of-concept / illustrative example** and is **NOT production-ready code**.
+> It is provided "as is" without warranty of any kind. The author(s) accept **no responsibility or liability**
+> for any issues, damages, or consequences arising from the use of this software.
+> **Do not use this code in a production environment** without thorough review, testing, and modification.
+
+An illustrative example library that demonstrates how to transparently offload large message payloads to Azure Blob Storage, similar to the [AWS SQS Extended Client Library](https://github.com/awslabs/amazon-sqs-java-extended-client-lib).
 
 ## Overview
 
@@ -177,11 +184,11 @@ client.processMessages(
 - Configuration properties support
 - Conditional bean creation
 
-### ✅ Production Ready
-- Comprehensive error handling
-- Structured logging with SLF4J
-- Thread-safe operations
-- Resource cleanup with `AutoCloseable`
+### ⚠️ Illustrative Code
+- This code is for illustration/educational purposes only
+- Not intended for production use without significant review and hardening
+- Demonstrates patterns and architecture, not production-grade error handling
+- Use at your own risk — no warranty or liability accepted
 
 ### ✅ Full Test Coverage
 - Unit tests with Mockito
@@ -233,6 +240,8 @@ See [`ExampleApplication.java`](src/main/java/com/azure/servicebus/extended/exam
 
 ## Thread Safety
 
+> ⚠️ Note: Thread safety has not been rigorously tested. This code is for illustrative purposes only.
+
 The library is designed to be thread-safe:
 - `AzureServiceBusExtendedClient` can be safely used from multiple threads
 - Blob storage operations are atomic
@@ -240,25 +249,42 @@ The library is designed to be thread-safe:
 
 ## Error Handling
 
+> ⚠️ Note: Error handling in this project is minimal and for demonstration only. Production use would require comprehensive error handling, retry logic, circuit breakers, and proper monitoring.
+
 - Storage failures throw `RuntimeException` with detailed error messages
 - Blob cleanup failures are logged but don't fail message processing
 - 404 errors on blob deletion are handled gracefully
 - All errors are logged with SLF4J
 
-## License
+## License & Disclaimer
 
-See [LICENSE](LICENSE) file.
+This project is licensed under the MIT License with an additional disclaimer — see the [LICENSE](LICENSE) file.
+
+**This code is for illustration purposes only and is not production-ready. The author(s) accept no responsibility for its use.**
 
 ## Contributing
 
-Contributions are welcome! Please ensure:
-- All tests pass (`mvn test`)
-- Code follows existing style conventions
-- New features include tests
-- Documentation is updated
+This is an illustrative project. Contributions are welcome but please note that no guarantees 
+are made about maintenance or support. If you wish to use this in production, we recommend 
+forking and adapting it to your specific needs with proper testing and security review.
 
 ## Related Projects
 
 - [AWS SQS Extended Client Library](https://github.com/awslabs/amazon-sqs-java-extended-client-lib) - Original inspiration
 - [Azure Service Bus SDK](https://github.com/Azure/azure-sdk-for-java/tree/main/sdk/servicebus)
 - [Azure Storage Blob SDK](https://github.com/Azure/azure-sdk-for-java/tree/main/sdk/storage/azure-storage-blob)
+
+---
+
+## ⚠️ Disclaimer
+
+This repository and all code within it is provided **for illustrative and educational purposes only**. 
+It is **not production-ready** and has **not been audited** for security, performance, or reliability.
+
+The author(s):
+- Accept **no responsibility** for any use of this code
+- Provide **no warranty** of any kind
+- Are **not liable** for any damages or issues arising from its use
+- Do **not guarantee** maintenance, updates, or support
+
+If you choose to use any part of this code, you do so **entirely at your own risk**.
