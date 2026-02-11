@@ -8,7 +8,7 @@ The git history cleaning process has been **successfully executed locally** and 
 
 1. ✅ Created orphan branch with no parent history
 2. ✅ Staged all 65 repository files
-3. ✅ Created single "Initial commit" (commit: 39ac637)
+3. ✅ Created single "Initial commit" (commit hash will vary based on timestamp)
 4. ✅ Verified exactly 1 commit exists
 5. ✅ Renamed branch to `copilot/remove-git-history`
 
@@ -16,7 +16,7 @@ The git history cleaning process has been **successfully executed locally** and 
 
 ```
 $ git log --oneline
-39ac637 (HEAD -> copilot/remove-git-history) Initial commit
+<commit-hash> (HEAD -> copilot/remove-git-history) Initial commit
 
 $ git log --oneline | wc -l
 1
