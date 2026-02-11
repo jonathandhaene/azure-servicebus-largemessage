@@ -6,32 +6,35 @@ Due to system constraints (force push is not available in the automated environm
 
 ## What's Included
 
-1. **CLEAN_HISTORY_GUIDE.md** - Detailed step-by-step guide explaining how to clean Git history
-2. **clean-history.sh** - Automated script to execute the cleaning process
-3. **.history-cleaned** - Marker file documenting this change
+1. **EXECUTION_RESULT.md** - ✅ Proof that local cleaning works! Results from automated execution
+2. **quick-clean.sh** - 🚀 NEW! Simplified one-command script (auto-detects main/master branch)
+3. **CLEAN_HISTORY_GUIDE.md** - Detailed step-by-step guide explaining how to clean Git history
+4. **clean-history.sh** - Full-featured automated script with prompts
+5. **.history-cleaned** - Marker file documenting this change
 
 ## Quick Start
 
-### Option 1: Use the Automated Script (Recommended)
+### 🚀 FASTEST: One-Command Script (Recommended)
 
 ```bash
-# Clone or navigate to your repository
-cd azure-servicebus-largemessage
+# Automatically detects and cleans main/master branch
+./quick-clean.sh
+```
 
-# Checkout this PR branch
-git checkout copilot/remove-git-history
+This new script:
+- Auto-detects your default branch (main or master)
+- Creates a single initial commit
+- Guides you through force push
+- **Verified to work** (see EXECUTION_RESULT.md)
 
-# Run the cleaning script
+### Option 2: Full-Featured Script
+
+```bash
+# For cleaning any branch, with detailed prompts
 ./clean-history.sh
 ```
 
-The script will:
-- Guide you through the process with prompts
-- Create a new branch with clean history
-- Optionally push the changes
-- Provide safety confirmations at each destructive step
-
-### Option 2: Manual Process
+### Option 3: Manual Process
 
 Follow the step-by-step instructions in `CLEAN_HISTORY_GUIDE.md`.
 
@@ -68,7 +71,9 @@ Follow the step-by-step instructions in `CLEAN_HISTORY_GUIDE.md`.
 
 ## Why Manual?
 
-The automated system operates within a sandboxed environment that doesn't allow force pushing (for safety reasons). Force pushing is required to rewrite Git history on the remote repository. Therefore, this operation must be performed from your local machine where you have full control.
+The automated system operates within a sandboxed environment that doesn't allow force pushing (for safety reasons). Force pushing is required to rewrite Git history on the remote repository.
+
+**However, the process has been tested and verified!** See `EXECUTION_RESULT.md` for proof that the local cleaning works perfectly. The only step that must be manual is the final force push to the remote.
 
 ## Questions or Issues?
 
